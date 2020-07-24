@@ -4,7 +4,6 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.widget import Widget
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
-from kivy.uix.button import Button
 from kivy.properties import ObjectProperty
 from kivy.storage.jsonstore import JsonStore
 
