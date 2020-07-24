@@ -193,7 +193,6 @@ class GetMacAdd():
         else:
             for macAdd in diffArr:
                 self.storage.addEntry(macAdd, str(datetime.datetime.now()))
-            self.logger.debug('getMac: No new MAC Addr found')
             self.storage.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
             return self.getString(self.storage.store.get("recentTen")["value"])
 
