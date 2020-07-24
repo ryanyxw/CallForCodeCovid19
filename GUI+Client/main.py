@@ -61,11 +61,12 @@ class storageUnit():
             #this.store.get("macDict")["value"][macAddress] += [time]#HEREEEee
             this.store.get("macDict")["value"][macAddress] += ["TEST"]#HEREEE
             this.store.get("recentTen")["value"] = [[time, macAddress]] + this.store.get("recentTen")["value"][:9]
+            self.logger.info('addEntry updated ' + macAddress + ' met at '+time)
         else:
             this.store.get("numEntries")["value"] += 1
             this.store.get("macDict")["value"][macAddress] = [time]
             this.store.get("recentTen")["value"] = [[time, macAddress]] + this.store.get("recentTen")["value"][:9]
-        self.logger.info('addEntry' + foreignSet + ' into ' + returnArr)
+            self.logger.info('addEntry added ' + macAddress + ' met at '+time)
 #Checks if the previous prevNetwork is the same as foreignSet, which is a set
     def isSamePrevNetwork(self, foreignSet):
         returnArr = []
@@ -82,18 +83,22 @@ class GetMacAdd():
         print("enter GetMacAdd")
         self.storage = storageUnit()
 
-        self.supported = False  #  Documents whether our mac address collection method is supported
+        self.supported = None  #  Documents whether our mac address collection method is supported
+
+        self.logger = logging.getLogger('MainGUI.GetMacAdd')
+        self.logger.info('creating an instance of GetMacAdd')
 
 
     def pressed(self, instance):
-        print("button pressed")
         macList = self.getMac()
         self.label3.text = "SelfMac : " + macList
+        self.logger.info('Button pressed')
 
     def getString(self, recentTen):
         returnStr = ""
         for i in recentTen:
             returnStr += repr(i)+ "\n"
+        self.logger.info('getString returned ' returnStr + ' from input ' + recentTen)
         return returnStr
 
     def getMacSelf(self):
