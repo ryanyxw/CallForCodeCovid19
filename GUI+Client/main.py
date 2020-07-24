@@ -17,7 +17,6 @@ import os
 from pathlib import Path
 import datetime
 import sys
-import logging
 #Regular Expressions
 import re
 #Client
@@ -157,7 +156,7 @@ class GetMacAdd():
         try:
             result = subprocess.run(['arp', '-a'], stdout=subprocess.PIPE)
             self.supported = True #  Documents whether our mac address collection method is supported
-            self.logger.debug('tryGetMac: executed arp -a successfully and got ' + result)
+            self.logger.debug('tryGetMac: executed arp -a successfully and got ' + str(result))
             return result
         except subprocess.CalledProcessError:
             fails = fails + 1
@@ -224,13 +223,12 @@ class HomePage(Screen, Widget):
         self.statusLabel = ObjectProperty(None)
         print("isExist before = " + repr(this.store.exists('numEntries')))
         if (not this.store.exists('numEntries')):
-            #this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
+            this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
             self.logger.info('Self Mac Address set to ' + self.macClass.getMacSelf()[0])
-            this.store.put("selfMac", value = "a1:4f:43:92:25:2e")
             tempSecret = client.initSelf(this.store.get("selfMac")["value"])
             if type(tempSecret) == str:
-                if (len(tempSecet) == 56):
-                    self.logger.info('Secret Key set to ' + tempSecet)
+                if (len(tempSecret) == 56):
+                    self.logger.info('Secret Key set to ' + tempSecret)
                     this.store.put("secretKey", value = tempSecret)
                     this.store.put("numEntries", value = 0)
                     this.store.put("macDict", value = dict())
@@ -268,6 +266,7 @@ class HomePage(Screen, Widget):
         elif (returnVal == 0):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!"
             this.store["statusLabel"]["home"] = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!"
+            print(this.store.get(["statusLabel"])["home"])
         elif (returnVal == 2):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)"
             this.store["statusLabel"]["home"] = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)"
@@ -455,4 +454,4 @@ if __name__ == "__main__":
     print("ENTER MOST OUTSIDE")
     MyMainApp().run()
     client.freeResources()
-    exit()
+    
