@@ -1,2 +1,4 @@
 
 API-Server/creds.py
+*.pyc
+__pycache__/**

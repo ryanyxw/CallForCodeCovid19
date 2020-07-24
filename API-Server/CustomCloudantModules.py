@@ -129,7 +129,7 @@ def getTimeOfLastAccess(MAC_Addr):
             document.fetch()
             if 'TimeOfLastAccess' in document:
                 strTime = document['TimeOfLastAccess']
-                time = datetime.datetime. strptime(strTime, '%Y-%m-%d_%H:%M:%S.%f')
+                time = datetime.datetime.strptime(strTime, '%Y-%m-%d_%H:%M:%S.%f')
             else:
                 time = datetime.datetime.fromisoformat('2011-11-04 00:05:23.283')
             return time
