@@ -48,7 +48,7 @@ class storageUnit():
 #Adds a unknown / new mac address that was not on the previous network into the json file
     def addEntry(self, macAddress, time):
         if macAddress in self.store.get("macDict")["value"]:
-            #self.store.get("macDict")["value"][macAddress] += [time]#HEREEE
+            #self.store.get("macDict")["value"][macAddress] += [time]#HEREEEee
             self.store.get("macDict")["value"][macAddress] += ["TEST"]#HEREEE
             self.store.get("recentTen")["value"] = [[time, macAddress]] + self.store.get("recentTen")["value"][:9]
         else:
