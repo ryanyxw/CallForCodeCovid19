@@ -122,6 +122,7 @@ class GetMacAdd():
                     mac = re.sub(isContractionMid,":" + digit + "0:",mac)
                 if mac != "00:00:00:00:00:00":
                     selfMac.append(mac)
+                    self.logger.info('getMacSelf:' + mac + ' has been appended to output of function')
             except KeyError:
                 pass
             except ValueError:
@@ -130,6 +131,7 @@ class GetMacAdd():
         if selfMac == []:
             raise OSError
         else:
+            self.logger.info('getMacSelf returned ' + str(selfMac))
             return selfMac
 
     def tryGetMac(self):
