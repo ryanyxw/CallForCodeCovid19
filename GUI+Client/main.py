@@ -98,7 +98,7 @@ class GetMacAdd():
         returnStr = ""
         for i in recentTen:
             returnStr += repr(i)+ "\n"
-        self.logger.info('getString returned ' returnStr + ' from input ' + recentTen)
+        self.logger.info('getString returned ' + returnStr + ' from input ' + recentTen)
         return returnStr
 
     def getMacSelf(self):
