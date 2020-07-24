@@ -83,7 +83,6 @@ class storageUnit():
 class GetMacAdd():
     def __init__(self, **kwargs):
         #super(HomePage, self).__init__(**kwargs)
-        print("enter GetMacAdd")
         self.storage = storageUnit()
 
         self.supported = None  #  Documents whether our mac address collection method is supported
@@ -437,12 +436,8 @@ kv = Builder.load_file("my.kv")
 
 class MyMainApp(App):
     def build(self):
-        print(Window.size)
-        print(type(Window.size))
 #        store = JsonStore(this.storeName + '.json')
-#        print(store.exists('numEntries'))
 #        if (not store.exists('numEntries')):
-#            print("enter")
 #            store.put("numEntries", value = 0)
 #            store.put("macDict", value = dict())
 #            store.put("recentTen", value = list())
