@@ -17,6 +17,7 @@ import os
 from pathlib import Path
 import datetime
 import sys
+import logging
 #Regular Expressions
 import re
 #Client
@@ -78,7 +79,7 @@ class storageUnit():
         for i in foreignSet:
             if i not in this.store.get("prevNetwork")["value"]:
                 returnArr += [i]
-        self.logger.info('isSamePrevNetwork filtered ' + foreignSet + ' into ' + returnArr)
+        self.logger.info('isSamePrevNetwork filtered ' + repr(foreignSet) + ' into ' + repr(returnArr))
         return returnArr
 
 #This entire class is meant for macAddress collection
@@ -103,7 +104,7 @@ class GetMacAdd():
         returnStr = ""
         for i in recentTen:
             returnStr += repr(i)+ "\n"
-        self.logger.info('getString returned ' + returnStr + ' from input ' + recentTen)
+        self.logger.info('getString returned ' + repr(returnStr) + ' from input ' + repr(recentTen))
         return returnStr
 
     def getMacSelf(self):
@@ -192,12 +193,12 @@ class GetMacAdd():
         diffArr = self.storage.isSamePrevNetwork(compareSet)
         if len(diffArr) == 0:
             self.logger.debug('getMac: No new MAC Addr found')
-            return self.getString(self.storage.store.get("recentTen")["value"])
+            return self.getString(this.store.get("recentTen")["value"])
         else:
             for macAdd in diffArr:
                 self.storage.addEntry(macAdd, str(datetime.datetime.now()))
-            self.storage.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
-            return self.getString(self.storage.store.get("recentTen")["value"])
+            this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
+            return self.getString(this.store.get("recentTen")["value"])
 
 
 #Class for the homepage screen
@@ -206,27 +207,38 @@ class HomePage(Screen, Widget):
         super(HomePage, self).__init__(**kwargs)
 
         #DELETE IN THE END ONLYU USED TO DEBUG
+        self.store = this.store
         self.macClass = GetMacAdd()
         self.selfMacAddress = str(self.macClass.getMacSelf()[0])
-
-
-
-
-
+        self.logger = logging.getLogger('MainGUI.HomePage')
+        self.logger.info('creating an instance of HomePage')
 #Determines if the server initiation is correct (should only be a one time thing)
         isSuccessful = True
 
+        if not os.path.isfile(this.appPath + os.sep + "client.log"):
+            f = open(this.appPath + os.sep + "client.log", "w")
+            f.close()
         client.init(this.appPath + os.sep + "client.log", this.logVerbosity)
         #self.macClass = GetMacAdd()
 #Checks if there is a file. If there is not, initiate all 4 necessary parts
         self.statusLabel = ObjectProperty(None)
         print("isExist before = " + repr(this.store.exists('numEntries')))
         if (not this.store.exists('numEntries')):
-            this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
-            print("BEFORE INITSELF")
+            #this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
+            self.logger.info('Self Mac Address set to ' + self.macClass.getMacSelf()[0])
+            this.store.put("selfMac", value = "a1:4f:43:92:25:2e")
             tempSecret = client.initSelf(this.store.get("selfMac")["value"])
-            print("AFTER INITSELF")
-            if (tempSecret == 2):
+            if type(tempSecret) == str:
+                if (len(tempSecet) == 56):
+                    self.logger.info('Secret Key set to ' + tempSecet)
+                    this.store.put("secretKey", value = tempSecret)
+                    this.store.put("numEntries", value = 0)
+                    this.store.put("macDict", value = dict())
+                    this.store.put("recentTen", value = list())
+                    this.store.put("prevNetwork", value = dict())
+#                self.statusLabel.text = "Status: Account Registered"
+                    this.store.put("statusLabel", home = "Status: Account Registered", quitapp = "Status: Click to delete all data", senddata = "Status: Click to report infected")
+            elif (tempSecret == 2):
                 self.statusLabel.text = "Status: Server Error, Please quit the app and try again (2)"
                 isSuccessful = False
             elif (tempSecret == 3):
@@ -236,13 +248,9 @@ class HomePage(Screen, Widget):
                 isSuccessful = False
                 self.statusLabel.text = "Status: Invalid Mac Address, Please quit the app and try again (4)"
             else:
-                this.store.put("secretKey", value = tempSecret)
-                this.store.put("numEntries", value = 0)
-                this.store.put("macDict", value = dict())
-                this.store.put("recentTen", value = list())
-                this.store.put("prevNetwork", value = dict())
-#                self.statusLabel.text = "Status: Account Registered"
-                this.store.put("statusLabel", home = "Status: Account Registered", quitapp = "Status: Click to delete all data", senddata = "Status: Click to report infected")
+                isSuccessful = False
+                self.statusLabel.text = "Status: unknown error"
+
         if (isSuccessful):
             self.options = ObjectProperty(None)
 #macClass variable is just used as a reference to be able to call the getMac class
@@ -251,10 +259,8 @@ class HomePage(Screen, Widget):
             self.actualMac = self.macClass.getMac()
 
 
-
     def coronaCatcherButtonClicked(self):
-
-        print("coronaCatcherButton clicked")
+        self.logger.info('coronaCatcherButtonClicked ')
         returnVal = client.queryMyMacAddr(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnVal == -1):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine"
@@ -277,8 +283,6 @@ class HomePage(Screen, Widget):
         else:
             self.statusLabel.text = "1 returned"
             this.store["statusLabel"]["home"] = "Checked by " + str(datetime.datetime.now()) + ", 1 returned"
-
-
 
 
 #This method is used when we click the button to check our current network mac
@@ -310,6 +314,7 @@ class AboutUsPage(Screen):
 #QuitApp class page (reference my.kv file)
 class QuitAppPage(Screen):
     def __init__(self, **kwargs):
+        self.store = this.store
         super(QuitAppPage, self).__init__(**kwargs)
         print("ENTER QuitApp INIT")
 
@@ -343,6 +348,7 @@ class QuitAppPage(Screen):
 #SendData class page (reference my.kv file)
 class SendDataPage(Screen):
     def __init__(self, **kwargs):
+        self.store = this.store
         super(SendDataPage, self).__init__(**kwargs)
         print("ENTER SENDDATA INIT")
 
@@ -395,7 +401,7 @@ class SeeDataPage(Screen):
     def __init__(self, **kwargs):
         super(SeeDataPage, self).__init__(**kwargs)
         print("ENTER SEEDATAPAGE INIT")
-
+        self.store = this.store
 #Used for future reference and changing the data in the table
         self.data = [0] * 20
 #Stores the recentTen aspect of the json file

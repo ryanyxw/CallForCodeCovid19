@@ -5,7 +5,7 @@ WindowManager:
     QuitAppPage:
     SendDataPage:
     SeeDataPage:
-    
+
 <ScaleLabel@Label>:
 	_scale: 1. if self.texture_size[0] < self.width else float(self.width) / self.texture_size[0]
 	canvas.before:
@@ -16,7 +16,7 @@ WindowManager:
 			y: self._scale or 1.
 	canvas.after:
 		PopMatrix
-		
+
 <-ScaleButton@Button>:
 	state_image: self.background_normal if self.state == 'normal' else self.background_down
 	disabled_image: self.background_disabled_normal if self.state == 'normal' else self.background_disabled_down
@@ -45,7 +45,7 @@ WindowManager:
 <HomePage>:
     name: "home"
     statusLabel : status
-    
+
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
         size_hint: 0.2, 0.05
@@ -72,51 +72,51 @@ WindowManager:
         pos_hint: {"center_x": 0.5, "bottom": 0}
         text: root.store.get("statusLabel")["home"]
         size_hint: 1, 0.05
-        
-    
-        
+
+
+
 
 <SideBarPage>:
     name: "sidebar"
     GridLayout:
         cols: 1
-        
+
         ScaleButton:
             text: "Home"
             on_release:
                 app.root.current = "home"
                 root.manager.transition.direction = "right"
-        
+
         ScaleButton:
             text: "About Us"
             on_release:
                 app.root.current = "aboutus"
                 root.manager.transition.direction = "left"
-                
+
         ScaleButton:
             text: "My MAC Addresses"
             on_release:
                 app.root.current = "seedata"
                 root.manager.transition.direction = "left"
-                
+
         ScaleButton:
             text: "Delete Data & Quit"
             on_release:
                 app.root.current = "quitapp"
                 root.manager.transition.direction = "left"
-        
+
         ScaleButton:
             text: "I'm Infected"
             on_release:
                 app.root.current = "senddata"
                 root.manager.transition.direction = "left"
-                
-    
+
+
 
 
 <AboutUsPage>:
     name: "aboutus"
-    
+
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
         size_hint: 0.2, 0.05
@@ -128,15 +128,15 @@ WindowManager:
         pos_hint: {"center_x": 0.5, "center_y": 0.8}
         size_hint: 0.4, 0.1
         text: "Our Team"
-        
+
     ScaleLabel:
         pos_hint: {"center_x": 0.5, "center_y": 0.7}
         size_hint: 0.4, 0.8
         text: "We are a team of cool students :/"
         outline_color : 100, 0, 0
-    
-            
-    
+
+
+
 
 
 <QuitAppPage>:
@@ -149,9 +149,9 @@ WindowManager:
         on_release:
             app.root.current = "sidebar"
             root.manager.transition.direction = "right"
-        
-        
-        
+
+
+
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.7}
         size_hint: 0.7, 0.12
@@ -163,7 +163,7 @@ WindowManager:
         pos_hint: {"center_x": 0.5, "bottom": 0}
         text: root.store.get("statusLabel")["quitapp"]
         size_hint: 1, 0.05
-        
+
 
 
 <SendDataPage>:
@@ -176,7 +176,7 @@ WindowManager:
         on_release:
             app.root.current = "sidebar"
             root.manager.transition.direction = "right"
-        
+
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.7}
         size_hint: 0.7, 0.12
@@ -194,11 +194,11 @@ WindowManager:
         pos_hint: {"center_x": 0.5, "bottom": 0}
         text: root.store.get("statusLabel")["senddata"]
         size_hint: 1, 0.05
-        
+
 
 <SeeDataPage>:
     name: "seedata"
-    
+
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
         size_hint: 0.2, 0.05
@@ -206,15 +206,10 @@ WindowManager:
         on_release:
             app.root.current = "sidebar"
             root.manager.transition.direction = "right"
-    
+
     ScaleButton:
         pos_hint: {"right": 0.95, "top": 0.97}
         size_hint: 0.2, 0.05
         text: "Renew"
         on_release:
             root.renewRecentTen()
-                
-    
-            
-            
-        
