@@ -70,7 +70,7 @@ WindowManager:
     ScaleLabel:
         id: status
         pos_hint: {"center_x": 0.5, "bottom": 0}
-        text: root.store.get("homeLabel")["value"]
+        text: root.store.get("statusLabel")["home"]
         size_hint: 1, 0.05
 
 
@@ -161,7 +161,7 @@ WindowManager:
     ScaleLabel:
         id: status
         pos_hint: {"center_x": 0.5, "bottom": 0}
-        text: root.store.get("quitAppLabel")["value"]
+        text: root.store.get("statusLabel")["quitapp"]
         size_hint: 1, 0.05
 
 
@@ -192,7 +192,7 @@ WindowManager:
     ScaleLabel:
         id: status
         pos_hint: {"center_x": 0.5, "bottom": 0}
-        text: root.store.get("sendDataLabel")["value"]
+        text: root.store.get("statusLabel")["senddata"]
         size_hint: 1, 0.05
 
 
