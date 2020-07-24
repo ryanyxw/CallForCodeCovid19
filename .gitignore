@@ -4,3 +4,4 @@ API-Server/creds.py
 __pycache__/**
 API-Server/__pycache__/**
 API-Server/__pycache__/*.pyc
+.DS_Store
