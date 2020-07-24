@@ -107,10 +107,10 @@ class GetMacAdd():
         isContractionMid = re.compile(r':([\da-fA-F]):')
         isContractionEnd = re.compile(r':([\da-fA-F])$')
         for interface in netifaces.interfaces():
-            self.logger.info('getMacSelf checking interface ' + interface + '')
+            self.logger.info('getMacSelf checking interface ' + interface)
             try:
                 mac = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]['addr']
-                self.logger.info('getMacSelf:' + interface + ' has MAC addr ' + )
+                self.logger.info('getMacSelf:' + interface + ' has MAC addr ' + mac)
                 if re.search(isContractionStart,mac) is not None:
                     digit = re.search(isContractionStart,mac).group(1)
                     mac = re.sub(isContractionStart,digit + "0:",mac)
