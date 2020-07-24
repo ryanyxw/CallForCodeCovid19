@@ -259,8 +259,6 @@ def passRateLimit(macAddr):
 	currentTime = datetime.datetime.now()
 	lastAccess = ccm.getTimeOfLastAccess(macAddr)
 	allowedTime = lastAccess + datetime.timedelta(hours=8)
-	print(currentTime)
-	print(allowedTime)
 	if allowedTime < currentTime:
 		return True
 	else:
