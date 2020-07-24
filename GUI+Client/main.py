@@ -43,11 +43,24 @@ if platform != 'android':
 else:
     this.appPath = os.path.dirname(__file__)
 
-this.logVerbosity = 20
+this.logVerbosity = 50
 this.storeName = 'local'
 
 kivy.config.log_dir = this.appPath
-kivy.config.log_level = "info"
+if this.logVerbosity < 10:
+    kivy.config.log_level = "trace"
+elif this.logVerbosity < 20:
+    kivy.config.log_level = "debug"
+elif this.logVerbosity < 30:
+    kivy.config.log_level = "info"
+elif this.logVerbosity < 40:
+    kivy.config.log_level = "warn"
+elif this.logVerbosity < 50:
+    kivy.config.log_level = "error"
+elif this.logVerbosity == 50:
+    kivy.log_level = "critical"
+else:
+    kivy.config.log_level = "trace"
 kivy.config.log_name = "MainGUI_%y-%m-%d_%_.txt"
 kivy.config.log_maxfiles = 49
 
