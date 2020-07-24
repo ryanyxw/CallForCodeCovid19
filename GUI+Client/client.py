@@ -23,10 +23,7 @@ def init(logFile,verbosityLevel):
     this.__curlHandle__ = pycurl.Curl()
     this.__logger__ = logging.getLogger(__name__)
     rotHandle = logging.handlers.RotatingFileHandler(logFile, maxBytes=10485760, backupCount=10)
-    if verbosityLevel is None:
-        rotHandle.setLevel(logging.WARNING)
-    else:
-        rotHandle.setLevel(verbosityLevel)
+    rotHandle.setLevel(verbosityLevel)
     this.__logger__.addHandler(rotHandle)
     return True
 
