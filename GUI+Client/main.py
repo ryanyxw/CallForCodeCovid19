@@ -6,6 +6,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.properties import ObjectProperty
 from kivy.storage.jsonstore import JsonStore
+from kivy.utils import platform
 #Changes the window size
 from kivy.core.window import Window
 import kivy.metrics
@@ -13,6 +14,7 @@ Window.size = (kivy.metrics.mm(72.3), kivy.metrics.mm(157.8)) #Height, Width
 #MAC
 import subprocess
 import os
+from pathlib import Path
 import datetime
 import sys
 #Regular Expressions
@@ -142,6 +144,7 @@ class GetMacAdd():
                 f=open(os.sep+"proc"+os.sep+"net"+os.sep+"arp", "r")
                 result = f.read()
                 self.supported = True  #  Documents whether our mac address collection method is supported
+                self.logger.debug('tryGetMac: read proc/net/arp successfully and got ' + result)
                 return result
             else:
                 fails = fails + 1
@@ -150,19 +153,19 @@ class GetMacAdd():
         try:
             result = subprocess.run(['arp', '-a'], stdout=subprocess.PIPE)
             self.supported = True #  Documents whether our mac address collection method is supported
+            self.logger.debug('tryGetMac: executed arp -a successfully and got ' + result)
             return result
         except subprocess.CalledProcessError:
             fails = fails + 1
             pass
         self.supported = False #  Documents whether our mac address collection method is supported
+        self.logger.debug('tryGetMac: all MAC address scanning methods failed')
         return ""
 
     def getMac(self):
-        result = self.tryGetMac()
-
-        macInitStr = result
-
+        macInitStr = self.tryGetMac()
         macInitStr = repr(macInitStr)
+        self.logger.debug('getMac: recieved ' + macInitStr)
         isMacAddr = re.compile(r"([\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2})")
         shortMacList = re.findall(isMacAddr,macInitStr)
         isContractionStart = re.compile(r'^([\da-fA-F]):')
@@ -181,15 +184,16 @@ class GetMacAdd():
                 mac = re.sub(isContractionMid,":" + digit + "0:",mac)
             macList.append(mac)
 
-
+        self.logger.debug('getMac: filtered into ' + repr(macList))
         compareSet = set(macList)
         diffArr = self.storage.isSamePrevNetwork(compareSet)
         if len(diffArr) == 0:
+            self.logger.debug('getMac: No new MAC Addr found')
             return self.getString(self.storage.store.get("recentTen")["value"])
         else:
             for macAdd in diffArr:
                 self.storage.addEntry(macAdd, str(datetime.datetime.now()))
-
+            self.logger.debug('getMac: No new MAC Addr found')
             self.storage.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
             return self.getString(self.storage.store.get("recentTen")["value"])
 
