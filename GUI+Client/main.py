@@ -7,6 +7,9 @@ from kivy.uix.label import Label
 from kivy.properties import ObjectProperty
 from kivy.storage.jsonstore import JsonStore
 from kivy.utils import platform
+from kivy.logger import Logger
+from kivy.logger import LoggerHistory
+import kivy.config
 #Changes the window size
 from kivy.core.window import Window
 import kivy.metrics
@@ -17,7 +20,6 @@ import os
 from pathlib import Path
 import datetime
 import sys
-import logging
 #Regular Expressions
 import re
 #Client
@@ -44,19 +46,18 @@ else:
 this.logVerbosity = 20
 this.storeName = 'local'
 
+kivy.config.log_dir = this.appPath
+kivy.config.log_level = "info"
+kivy.config.log_name = "MainGUI_%y-%m-%d_%_.txt"
+kivy.config.log_maxfiles = 49
+
 #Manages all permanent storage and adding into the JSON file
 this.store = JsonStore(this.appPath + os.sep + this.storeName + '.json')
-logger = logging.getLogger('MainGUI')
-logger.setLevel(0)
-rotHandle = logging.handlers.RotatingFileHandler(this.appPath + os.sep + 'main.log', maxBytes=10485760, backupCount=10)
-rotHandle.setLevel(this.logVerbosity)
-logger.addHandler(rotHandle)
 
 class storageUnit():
 
     def __init__(self):
-        self.logger = logging.getLogger('MainGUI.storageUnit')
-        self.logger.info('creating an instance of storageUnit')
+        Logger.info('creating an instance of storageUnit')
 
 #Adds a unknown / new mac address that was not on the previous network into the json file
     def addEntry(self, macAddress, time):
@@ -64,19 +65,19 @@ class storageUnit():
             #this.store.get("macDict")["value"][macAddress] += [time]#HEREEEee
             this.store.get("macDict")["value"][macAddress] += ["TEST"]#HEREEE
             this.store.get("recentTen")["value"] = [[time, macAddress]] + this.store.get("recentTen")["value"][:9]
-            self.logger.info('addEntry updated ' + macAddress + ' met at '+time)
+            Logger.info('addEntry updated ' + macAddress + ' met at '+time)
         else:
             this.store.get("numEntries")["value"] += 1
             this.store.get("macDict")["value"][macAddress] = [time]
             this.store.get("recentTen")["value"] = [[time, macAddress]] + this.store.get("recentTen")["value"][:9]
-            self.logger.info('addEntry added ' + macAddress + ' met at '+time)
+            Logger.info('addEntry added ' + macAddress + ' met at '+time)
 #Checks if the previous prevNetwork is the same as foreignSet, which is a set
     def isSamePrevNetwork(self, foreignSet):
         returnArr = []
         for i in foreignSet:
             if i not in this.store.get("prevNetwork")["value"]:
                 returnArr += [i]
-        self.logger.info('isSamePrevNetwork filtered ' + repr(foreignSet) + ' into ' + repr(returnArr))
+        Logger.info('isSamePrevNetwork filtered ' + repr(foreignSet) + ' into ' + repr(returnArr))
         return returnArr
 
 #This entire class is meant for macAddress collection
@@ -87,20 +88,20 @@ class GetMacAdd():
 
         self.supported = None  #  Documents whether our mac address collection method is supported
 
-        self.logger = logging.getLogger('MainGUI.GetMacAdd')
-        self.logger.info('creating an instance of GetMacAdd')
+
+        Logger.info('creating an instance of GetMacAdd')
 
 
     def pressed(self, instance):
         macList = self.getMac()
         self.label3.text = "SelfMac : " + macList
-        self.logger.info('Button pressed')
+        Logger.info('Button pressed')
 
     def getString(self, recentTen):
         returnStr = ""
         for i in recentTen:
             returnStr += repr(i)+ "\n"
-        self.logger.info('getString returned ' + repr(returnStr) + ' from input ' + repr(recentTen))
+        Logger.info('getString returned ' + repr(returnStr) + ' from input ' + repr(recentTen))
         return returnStr
 
     def getMacSelf(self):
@@ -109,10 +110,10 @@ class GetMacAdd():
         isContractionMid = re.compile(r':([\da-fA-F]):')
         isContractionEnd = re.compile(r':([\da-fA-F])$')
         for interface in netifaces.interfaces():
-            self.logger.info('getMacSelf checking interface ' + interface)
+            Logger.info('getMacSelf checking interface ' + interface)
             try:
                 mac = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]['addr']
-                self.logger.info('getMacSelf:' + interface + ' has MAC addr ' + mac)
+                Logger.info('getMacSelf:' + interface + ' has MAC addr ' + mac)
                 if re.search(isContractionStart,mac) is not None:
                     digit = re.search(isContractionStart,mac).group(1)
                     mac = re.sub(isContractionStart,digit + "0:",mac)
@@ -124,7 +125,7 @@ class GetMacAdd():
                     mac = re.sub(isContractionMid,":" + digit + "0:",mac)
                 if mac != "00:00:00:00:00:00":
                     selfMac.append(mac)
-                    self.logger.info('getMacSelf:' + mac + ' has been appended to output of function')
+                    Logger.info('getMacSelf:' + mac + ' has been appended to output of function')
             except KeyError:
                 pass
             except ValueError:
@@ -133,7 +134,7 @@ class GetMacAdd():
         if selfMac == []:
             raise OSError
         else:
-            self.logger.info('getMacSelf returned ' + str(selfMac))
+            Logger.info('getMacSelf returned ' + str(selfMac))
             return selfMac
 
     def tryGetMac(self):
@@ -144,7 +145,7 @@ class GetMacAdd():
                 f=open(os.sep+"proc"+os.sep+"net"+os.sep+"arp", "r")
                 result = f.read()
                 self.supported = True  #  Documents whether our mac address collection method is supported
-                self.logger.debug('tryGetMac: read proc/net/arp successfully and got ' + result)
+                Logger.debug('tryGetMac: read proc/net/arp successfully and got ' + result)
                 return result
             else:
                 fails = fails + 1
@@ -153,19 +154,19 @@ class GetMacAdd():
         try:
             result = subprocess.run(['arp', '-a'], stdout=subprocess.PIPE)
             self.supported = True #  Documents whether our mac address collection method is supported
-            self.logger.debug('tryGetMac: executed arp -a successfully and got ' + result)
+            Logger.debug('tryGetMac: executed arp -a successfully and got ' + result)
             return result
         except subprocess.CalledProcessError:
             fails = fails + 1
             pass
         self.supported = False #  Documents whether our mac address collection method is supported
-        self.logger.debug('tryGetMac: all MAC address scanning methods failed')
+        Logger.debug('tryGetMac: all MAC address scanning methods failed')
         return ""
 
     def getMac(self):
         macInitStr = self.tryGetMac()
         macInitStr = repr(macInitStr)
-        self.logger.debug('getMac: recieved ' + macInitStr)
+        Logger.debug('getMac: recieved ' + macInitStr)
         isMacAddr = re.compile(r"([\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2})")
         shortMacList = re.findall(isMacAddr,macInitStr)
         isContractionStart = re.compile(r'^([\da-fA-F]):')
@@ -184,11 +185,11 @@ class GetMacAdd():
                 mac = re.sub(isContractionMid,":" + digit + "0:",mac)
             macList.append(mac)
 
-        self.logger.debug('getMac: filtered into ' + repr(macList))
+        Logger.debug('getMac: filtered into ' + repr(macList))
         compareSet = set(macList)
         diffArr = self.storage.isSamePrevNetwork(compareSet)
         if len(diffArr) == 0:
-            self.logger.debug('getMac: No new MAC Addr found')
+            Logger.debug('getMac: No new MAC Addr found')
             return self.getString(this.store.get("recentTen")["value"])
         else:
             for macAdd in diffArr:
@@ -206,8 +207,7 @@ class HomePage(Screen, Widget):
         self.store = this.store
         self.macClass = GetMacAdd()
         self.selfMacAddress = str(self.macClass.getMacSelf()[0])
-        self.logger = logging.getLogger('MainGUI.HomePage')
-        self.logger.info('creating an instance of HomePage')
+        Logger.info('creating an instance of HomePage')
 #Determines if the server initiation is correct (should only be a one time thing)
         isSuccessful = True
 
@@ -221,12 +221,12 @@ class HomePage(Screen, Widget):
 
         if (not this.store.exists('numEntries')):
             #this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
-            self.logger.info('Self Mac Address set to ' + self.macClass.getMacSelf()[0])
+            Logger.info('Self Mac Address set to ' + self.macClass.getMacSelf()[0])
             this.store.put("selfMac", value = "a1:4f:43:92:25:2e")
             tempSecret = client.initSelf(this.store.get("selfMac")["value"])
             if type(tempSecret) == str:
                 if (len(tempSecet) == 56):
-                    self.logger.info('Secret Key set to ' + tempSecet)
+                    Logger.info('Secret Key set to ' + tempSecet)
                     this.store.put("secretKey", value = tempSecret)
                     this.store.put("numEntries", value = 0)
                     this.store.put("macDict", value = dict())
@@ -256,7 +256,7 @@ class HomePage(Screen, Widget):
 
 
     def coronaCatcherButtonClicked(self):
-        self.logger.info('coronaCatcherButtonClicked ')
+        Logger.info('coronaCatcherButtonClicked ')
         returnVal = client.queryMyMacAddr(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnVal == -1):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine"
@@ -285,7 +285,7 @@ class HomePage(Screen, Widget):
     def calculateMac(self):
         self.actualMac = self.macClass.getMac()
         self.coronaCatcherButtonClicked()
-        self.logger.info('Calculated MAC Addr to be ' + self.actualMac)
+        Logger.info('Calculated MAC Addr to be ' + self.actualMac)
         return self.actualMac
 
     #This calculates the offset accordingly (topLeftH and topLeftW are both in terms of proportions)
@@ -294,7 +294,7 @@ class HomePage(Screen, Widget):
         offSet = smallDim * percentage
         xCoor = topLeftWidth * Window.size[1] + offSet#Windows: (Height, Width)
         yCoor = topLeftHeight * Window.size[0] - self.options.size[0] - offSet
-        self.logger.info('findCoordinates returned X:' + repr(xCoor / Window.size[1]) + ' and Y:'+repr(yCoor / Window.size[0]))
+        Logger.info('findCoordinates returned X:' + repr(xCoor / Window.size[1]) + ' and Y:'+repr(yCoor / Window.size[0]))
         return (xCoor / Window.size[1], yCoor / Window.size[0])
 
     pass
@@ -310,8 +310,7 @@ class AboutUsPage(Screen):
 #QuitApp class page (reference my.kv file)
 class QuitAppPage(Screen):
     def __init__(self, **kwargs):
-        self.logger = logging.getLogger('MainGUI.QuitAppPage')
-        self.logger.info('creating an instance of QuitAppPage')
+        Logger.info('creating an instance of QuitAppPage')
         self.store = this.store
         super(QuitAppPage, self).__init__(**kwargs)
 
@@ -319,7 +318,7 @@ class QuitAppPage(Screen):
 
 
     def deleteDataAndQuitButtonClicked(self):
-        self.logger.info('Delete data and quit clicked')
+        Logger.info('Delete data and quit clicked')
         returnValue = client.forgetUser(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnValue == 0):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Sucess! You may quit the app"
@@ -347,8 +346,7 @@ class SendDataPage(Screen):
     def __init__(self, **kwargs):
         self.store = this.store
         super(SendDataPage, self).__init__(**kwargs)
-        self.logger = logging.getLogger('MainGUI.SendDataPage')
-        self.logger.info('creating an instance of SendDataPage')
+        Logger.info('creating an instance of SendDataPage')
 
         self.statusLabel = ObjectProperty(None)
     def getCSVString(self):
@@ -359,7 +357,7 @@ class SendDataPage(Screen):
         return returnStr
 
     def imInfectedButtonClicked(self):
-        self.logger.info('imInfected button clicked')
+        Logger.info('imInfected button clicked')
 
         returnVal = client.positiveReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"], self.getCSVString())
         if (returnVal == 2):
@@ -376,7 +374,7 @@ class SendDataPage(Screen):
             this.store["statusLabel"]["senddata"] = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Get well soon!"
 
     def iJustRecoveredButtonClicked(self):
-        self.logger.info('iJustRecovered button clicked')
+        Logger.info('iJustRecovered button clicked')
 
         returnVal = client.negativeReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnVal == 2):
@@ -398,8 +396,7 @@ class SendDataPage(Screen):
 class SeeDataPage(Screen):
     def __init__(self, **kwargs):
         super(SeeDataPage, self).__init__(**kwargs)
-        self.logger = logging.getLogger('MainGUI.SeeDataPage')
-        self.logger.info('creating an instance of SeeDataPage')
+        Logger.info('creating an instance of SeeDataPage')
         self.store = this.store
 #Used for future reference and changing the data in the table
         self.data = [0] * 20
@@ -409,7 +406,7 @@ class SeeDataPage(Screen):
         self.table = GridLayout()
         self.table.cols = 2
 
-        self.logger.info("BEFORE ASSIGN VALUES")
+        Logger.info("BEFORE ASSIGN VALUES")
 #Initiates the table by first creating a label into the self.data array, and
 #then adding them to the grid
         for i in range(len(self.recentTen)):
@@ -421,7 +418,7 @@ class SeeDataPage(Screen):
 
 #This method changes the self.data so that it reflects the new recentTen
     def renewRecentTen(self):
-        self.logger.info('Renew Recent Ten button clicked')
+        Logger.info('Renew Recent Ten button clicked')
         self.recentTen = this.store.get("recentTen")["value"]
         for i in range(len(self.recentTen)):
             self.data[2 * i].text = self.recentTen[i][1]
@@ -447,12 +444,22 @@ class MyMainApp(App):
 
 if __name__ == "__main__":
     try:
-        this.logger.info('App Started')
+        Logger.info('App Started')
         MyMainApp().run()
-        this.logger.info('App Exiting')
+        Logger.info('App Exiting')
         client.freeResources()
+        f = open(this.appPath + os.sep + "main.log", "a")
+        for log in LoggerHistory.history:
+            f.write(repr(log) +'\n')
+        f.close()
         exit()
     except KeyboardInterrupt:
-        this.logger.info('App Exiting')
+        Logger.critical('App Exiting')
+        f = open(this.appPath + os.sep + "main.log", "a")
+        for log in LoggerHistory.history:
+            f.write(repr(log) +'\n')
+        f.close()
         client.freeResources()
         exit()
+    except Exception as e:
+        Logger.critical("Exception occurred", exc_info=True)
