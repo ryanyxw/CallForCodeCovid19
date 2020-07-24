@@ -23,6 +23,9 @@ import re
 import client
 #network interfaces
 import netifaces
+#Logging
+import logging
+import logging.handlers
 #WHen return from server, remember type
 #os.platform used to identify the os
 #Client secret key
@@ -217,11 +220,12 @@ class HomePage(Screen, Widget):
         #self.macClass = GetMacAdd()
 #Checks if there is a file. If there is not, initiate all 4 necessary parts
         self.statusLabel = ObjectProperty(None)
-
+        print("isExist before = " + repr(this.store.exists('numEntries')))
         if (not this.store.exists('numEntries')):
-            #this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
-            this.store.put("selfMac", value = "a1:4f:43:92:25:2e")
+            this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
+            print("BEFORE INITSELF")
             tempSecret = client.initSelf(this.store.get("selfMac")["value"])
+            print("AFTER INITSELF")
             if (tempSecret == 2):
                 self.statusLabel.text = "Status: Server Error, Please quit the app and try again (2)"
                 isSuccessful = False
