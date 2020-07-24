@@ -205,14 +205,14 @@ class HomePage(Screen, Widget):
         #DELETE IN THE END ONLYU USED TO DEBUG
         self.macClass = GetMacAdd()
         self.selfMacAddress = str(self.macClass.getMacSelf()[0])
-
-
-
-
-
+        self.logger = logging.getLogger('MainGUI.HomePage')
+        self.logger.info('creating an instance of HomePage')
 #Determines if the server initiation is correct (should only be a one time thing)
         isSuccessful = True
 
+        if not os.path.isfile(this.appPath + os.sep + "client.log"):
+            f = open(this.appPath + os.sep + "client.log", "w")
+            f.close()
         client.init(this.appPath + os.sep + "client.log", this.logVerbosity)
         #self.macClass = GetMacAdd()
 #Checks if there is a file. If there is not, initiate all 4 necessary parts
@@ -220,9 +220,19 @@ class HomePage(Screen, Widget):
 
         if (not this.store.exists('numEntries')):
             #this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
+            self.logger.info('Self Mac Address set to ' + self.macClass.getMacSelf()[0])
             this.store.put("selfMac", value = "a1:4f:43:92:25:2e")
-            tempSecret = client.initSelf(this.store.get("selfMac")["value"])
-            if (tempSecret == 2):
+            tempSecret = client.initSelf(this.store.get("selfMac")["value"]
+            if (type(tempSecret) == str):
+                if (len(tempSecet) == 56):
+                    this.store.put("secretKey", value = tempSecret)
+                    this.store.put("numEntries", value = 0)
+                    this.store.put("macDict", value = dict())
+                    this.store.put("recentTen", value = list())
+                    this.store.put("prevNetwork", value = dict())
+#                self.statusLabel.text = "Status: Account Registered"
+                    this.store.put("statusLabel", home = "Status: Account Registered", quitapp = "Status: Click to delete all data", senddata = "Status: Click to report infected")
+            elif (tempSecret == 2):
                 self.statusLabel.text = "Status: Server Error, Please quit the app and try again (2)"
                 isSuccessful = False
             elif (tempSecret == 3):
@@ -232,13 +242,9 @@ class HomePage(Screen, Widget):
                 isSuccessful = False
                 self.statusLabel.text = "Status: Invalid Mac Address, Please quit the app and try again (4)"
             else:
-                this.store.put("secretKey", value = tempSecret)
-                this.store.put("numEntries", value = 0)
-                this.store.put("macDict", value = dict())
-                this.store.put("recentTen", value = list())
-                this.store.put("prevNetwork", value = dict())
-#                self.statusLabel.text = "Status: Account Registered"
-                this.store.put("statusLabel", home = "Status: Account Registered", quitapp = "Status: Click to delete all data", senddata = "Status: Click to report infected")
+                isSuccessful = False
+                self.statusLabel.text = "Status: unknown error"
+
         if (isSuccessful):
             self.options = ObjectProperty(None)
 #macClass variable is just used as a reference to be able to call the getMac class
