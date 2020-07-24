@@ -246,7 +246,7 @@ class HomePage(Screen, Widget):
                 self.statusLabel.text = "Status: Invalid Mac Address, Please quit the app and try again (4)"
             else:
                 isSuccessful = False
-                self.statusLabel.text = "Status: unknown error"
+                self.statusLabel.text = "Status: Unknown error occurred. Please restart the app. If this persists, please contact developers. "
 
         if (isSuccessful):
             self.options = ObjectProperty(None)
@@ -286,6 +286,7 @@ class HomePage(Screen, Widget):
     def calculateMac(self):
         self.actualMac = self.macClass.getMac()
         self.coronaCatcherButtonClicked()
+        self.logger.info('Calculated MAC Addr to be ' + self.actualMac)
         return self.actualMac
 
     #This calculates the offset accordingly (topLeftH and topLeftW are both in terms of proportions)
@@ -294,8 +295,7 @@ class HomePage(Screen, Widget):
         offSet = smallDim * percentage
         xCoor = topLeftWidth * Window.size[1] + offSet#Windows: (Height, Width)
         yCoor = topLeftHeight * Window.size[0] - self.options.size[0] - offSet
-        print(xCoor / Window.size[1])
-        print(yCoor / Window.size[0])
+        self.logger.info('findCoordinates returned X:' + repr(xCoor / Window.size[1]) + ' and Y:'+repr(yCoor / Window.size[0]))
         return (xCoor / Window.size[1], yCoor / Window.size[0])
 
     pass
@@ -311,15 +311,16 @@ class AboutUsPage(Screen):
 #QuitApp class page (reference my.kv file)
 class QuitAppPage(Screen):
     def __init__(self, **kwargs):
+        self.logger = logging.getLogger('MainGUI.QuitAppPage')
+        self.logger.info('creating an instance of QuitAppPage')
         self.store = this.store
         super(QuitAppPage, self).__init__(**kwargs)
-        print("ENTER QuitApp INIT")
 
         self.statusLabel = ObjectProperty(None)
+
+
     def deleteDataAndQuitButtonClicked(self):
-
-        print("DeleteData button Clicked")
-
+        self.logger.info('Delete data and quit clicked')
         returnValue = client.forgetUser(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnValue == 0):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Sucess! You may quit the app"
@@ -347,7 +348,8 @@ class SendDataPage(Screen):
     def __init__(self, **kwargs):
         self.store = this.store
         super(SendDataPage, self).__init__(**kwargs)
-        print("ENTER SENDDATA INIT")
+        self.logger = logging.getLogger('MainGUI.SendDataPage')
+        self.logger.info('creating an instance of SendDataPage')
 
         self.statusLabel = ObjectProperty(None)
     def getCSVString(self):
@@ -358,7 +360,7 @@ class SendDataPage(Screen):
         return returnStr
 
     def imInfectedButtonClicked(self):
-        print("imInfected button clicked")
+        self.logger.info('imInfected button clicked')
 
         returnVal = client.positiveReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"], self.getCSVString())
         if (returnVal == 2):
@@ -375,7 +377,7 @@ class SendDataPage(Screen):
             this.store["statusLabel"]["senddata"] = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Get well soon!"
 
     def iJustRecoveredButtonClicked(self):
-        print("iJustRecovered button clicked")
+        self.logger.info('iJustRecovered button clicked')
 
         returnVal = client.negativeReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnVal == 2):
@@ -397,7 +399,8 @@ class SendDataPage(Screen):
 class SeeDataPage(Screen):
     def __init__(self, **kwargs):
         super(SeeDataPage, self).__init__(**kwargs)
-        print("ENTER SEEDATAPAGE INIT")
+        self.logger = logging.getLogger('MainGUI.SeeDataPage')
+        self.logger.info('creating an instance of SeeDataPage')
         self.store = this.store
 #Used for future reference and changing the data in the table
         self.data = [0] * 20
@@ -407,8 +410,7 @@ class SeeDataPage(Screen):
         self.table = GridLayout()
         self.table.cols = 2
 
-
-        print("BEFORE ASSIGN VALUES")
+        self.logger.info("BEFORE ASSIGN VALUES")
 #Initiates the table by first creating a label into the self.data array, and
 #then adding them to the grid
         for i in range(len(self.recentTen)):
@@ -420,7 +422,7 @@ class SeeDataPage(Screen):
 
 #This method changes the self.data so that it reflects the new recentTen
     def renewRecentTen(self):
-        print("renew clicked")
+        self.logger.info('Renew Recent Ten button clicked')
         self.recentTen = this.store.get("recentTen")["value"]
         for i in range(len(self.recentTen)):
             self.data[2 * i].text = self.recentTen[i][1]
@@ -449,7 +451,13 @@ class MyMainApp(App):
 
 
 if __name__ == "__main__":
-    print("ENTER MOST OUTSIDE")
-    MyMainApp().run()
-    client.freeResources()
-    exit()
+    try:
+        this.logger.info('App Started')
+        MyMainApp().run()
+        this.logger.info('App Exiting')
+        client.freeResources()
+        exit()
+    except KeyboardInterrupt:
+        this.logger.info('App Exiting')
+        client.freeResources()
+        exit()
