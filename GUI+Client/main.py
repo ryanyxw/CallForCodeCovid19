@@ -249,18 +249,25 @@ class HomePage(Screen, Widget):
         returnVal = client.queryMyMacAddr(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnVal == -1):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine"
+            this.store["statusLabel"]["home"] = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine"
         elif (returnVal == 0):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!"
+            this.store["statusLabel"]["home"] = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!"
         elif (returnVal == 2):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)"
+            this.store["statusLabel"]["home"] = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)"
         elif (returnVal == 3):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect secret key, you're kinda screwed (3)"
+            this.store["statusLabel"]["home"] = "Checked by " + str(datetime.datetime.now()) + ", Incorrect secret key, you're kinda screwed (3)"
         elif (returnVal == 4):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid mac address, you're kinda screwed (4)"
+            this.store["statusLabel"]["home"] = "Checked by " + str(datetime.datetime.now()) + ", Invalid mac address, you're kinda screwed (4)"
         elif (returnVal == 5):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Overload. Please do not click button twice"
+            this.store["statusLabel"]["home"] = "Checked by " + str(datetime.datetime.now()) + ", Server Overload. Please do not click button twice"
         else:
             self.statusLabel.text = "1 returned"
+            this.store["statusLabel"]["home"] = "Checked by " + str(datetime.datetime.now()) + ", 1 returned"
 
 
 
@@ -305,16 +312,22 @@ class QuitAppPage(Screen):
         returnValue = client.forgetUser(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnValue == 0):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Sucess! You may quit the app"
+            this.store["statusLabel"]["quitapp"] = "Checked by " + str(datetime.datetime.now()) + ", Sucess! You may quit the app"
         elif (returnValue == 2):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Error (2)"
+            this.store["statusLabel"]["quitapp"] = "Checked by " + str(datetime.datetime.now()) + ", Server Error (2)"
         elif (returnValue == 3):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", incorrect secret key (3)"
+            this.store["statusLabel"]["quitapp"] = "Checked by " + str(datetime.datetime.now()) + ", incorrect secret key (3)"
         elif (returnValue == 4):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", invalid mac addr of self (4)"
+            this.store["statusLabel"]["quitapp"] = "Checked by " + str(datetime.datetime.now()) + ", invalid mac addr of self (4)"
         elif (returnValue == 1):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", 1 is returned (1)"
+            this.store["statusLabel"]["quitapp"] = "Checked by " + str(datetime.datetime.now()) + ", 1 is returned (1)"
         else:
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", server returned unknown command : " + str(returnValue)
+            this.store["statusLabel"]["quitapp"] = "Checked by " + str(datetime.datetime.now()) + ", server returned unknown command : " + str(returnValue)
 
     pass
 
@@ -338,12 +351,16 @@ class SendDataPage(Screen):
         returnVal = client.positiveReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"], self.getCSVString())
         if (returnVal == 2):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)"
+            this.store["statusLabel"]["senddata"] = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)"
         elif (returnVal == 3):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)"
+            this.store["statusLabel"]["senddata"] = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)"
         elif (returnVal == 4):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid CSV. Restart app and contact admin"
+            this.store["statusLabel"]["senddata"] = "Checked by " + str(datetime.datetime.now()) + ", Invalid CSV. Restart app and contact admin"
         else:
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Get well soon!"
+            this.store["statusLabel"]["senddata"] = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Get well soon!"
 
     def iJustRecoveredButtonClicked(self):
         print("iJustRecovered button clicked")
@@ -351,12 +368,16 @@ class SendDataPage(Screen):
         returnVal = client.negativeReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnVal == 2):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)"
+            this.store["statusLabel"]["senddata"] = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)"
         elif (returnVal == 3):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)"
+            this.store["statusLabel"]["senddata"] = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)"
         elif (returnVal == 4):
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid MAC Address of self. Restart app and contact admin (4)"
+            this.store["statusLabel"]["senddata"] = "Checked by " + str(datetime.datetime.now()) + ", Invalid MAC Address of self. Restart app and contact admin (4)"
         else:
             self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Good job recovering! "
+            this.store["statusLabel"]["senddata"] = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Good job recovering! "
 
     pass
 
