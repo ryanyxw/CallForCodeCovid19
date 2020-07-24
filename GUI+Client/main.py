@@ -238,8 +238,8 @@ class HomePage(Screen, Widget):
             this.store.put("selfMac", value = "a1:4f:43:92:25:2e")
             tempSecret = client.initSelf(this.store.get("selfMac")["value"])
             if type(tempSecret) == str:
-                if (len(tempSecet) == 56):
-                    Logger.info('Secret Key set to ' + tempSecet)
+                if (len(tempSecret) == 56):
+                    Logger.info('Secret Key set to ' + tempSecret)
                     this.store.put("secretKey", value = tempSecret)
                     this.store.put("numEntries", value = 0)
                     this.store.put("macDict", value = dict())
