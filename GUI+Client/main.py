@@ -48,7 +48,8 @@ class storageUnit():
 #Adds a unknown / new mac address that was not on the previous network into the json file
     def addEntry(self, macAddress, time):
         if macAddress in self.store.get("macDict")["value"]:
-            self.store.get("macDict")["value"][macAddress] += [time]#HEREEE
+            #self.store.get("macDict")["value"][macAddress] += [time]#HEREEE
+            self.store.get("macDict")["value"][macAddress] += ["TEST"]#HEREEE
             self.store.get("recentTen")["value"] = [[time, macAddress]] + self.store.get("recentTen")["value"][:9]
         else:
             self.store.get("numEntries")["value"] += 1
@@ -209,18 +210,17 @@ class HomePage(Screen, Widget):
             else:
                 self.store.put("secretKey", value = tempSecret)
                 self.store.put("numEntries", value = 0)
-                self.store.put("macDict", value = {"a2:4f:43:92:25:2e": "07/21/2020"})
+                self.store.put("macDict", value = dict())
                 self.store.put("recentTen", value = list())
                 self.store.put("prevNetwork", value = dict())
 #                self.statusLabel.text = "Status: Account Registered"
-                self.store.put("statusLabel", value = "Status: Account Registered")
+                self.store.put("statusLabel", home = "Status: Account Registered", quitapp = "Status: Click to delete all data", senddata = "Status: Click to report infected")
         if (isSuccessful):
             self.options = ObjectProperty(None)
 #macClass variable is just used as a reference to be able to call the getMac class
             self.macClass = GetMacAdd()
             self.selfMacAddress = str(self.macClass.getMacSelf()[0]) #Assumes the first mac address is self mac address
             self.actualMac = self.macClass.getMac()
-#            self.statusLabel.text = self.store.get("statusLabel")["value"]
             
             
             
