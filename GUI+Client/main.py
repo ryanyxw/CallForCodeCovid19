@@ -9,6 +9,7 @@ from kivy.storage.jsonstore import JsonStore
 from kivy.utils import platform
 from kivy.logger import Logger
 from kivy.logger import LoggerHistory
+from kivy.clock import Clock
 import kivy.config
 #Changes the window size
 from kivy.core.window import Window
@@ -271,7 +272,12 @@ class HomePage(Screen, Widget):
             self.macClass = GetMacAdd()
             self.selfMacAddress = str(self.macClass.getMacSelf()[0]) #Assumes the first mac address is self mac address
             self.actualMac = self.macClass.getMac()
-
+            
+            #The line of code that calls the function runTimeFunction every 0.5 seconds
+            Clock.schedule_interval(self.runTimeFunction, 0.5)
+            
+    def runTimeFunction(self, deltaT):
+        print("hello")
 
     def coronaCatcherButtonClicked(self):
         Logger.info('coronaCatcherButtonClicked ')
