@@ -1,5 +1,5 @@
 import flask
-from flask import request, jsonify
+from flask import request, jsonify, session
 from flask_api import status
 import re
 import json
@@ -8,17 +8,43 @@ import os
 import time
 import datetime
 import atexit
+from cachetools import TTLCache
 
 import CustomCloudantModules as ccm
 
 isMacAddr = re.compile(r"([\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2})")
 isFloodAddr = re.compile("FF:FF:FF:FF:FF:FF",re.I)
-
+OPERATORS = re.compile('SELECT|UPDATE|INSERT|DELETE|\*|OR|\{|\}|', re.IGNORECASE)
+ip_ban_list = TTLCache(maxsize=50, ttl=15*60)
 
 ccm.init()
 
 app = flask.Flask(__name__)
-
+@app.before_request
+def block_method():
+	ip = request.environ.get('REMOTE_ADDR')
+	data = request.get_json(force=True)
+	if 'Self' in data:
+		mac = parseMacAddr(data['Self'])[0]
+	else:
+		mac = None
+	if 'Secret' in data:
+		secret = data['Secret']
+	else:
+		secret = None
+	if ip in ip_ban_list:
+		if ip_ban_list[ip]['records'] >= 3:
+			abort(500)  # Returning a 500 error is an attempt to break (inexperienced) attackers' scripts that assume 500 errors are exploits,
+			# thus effectively overwhelming them with false positives while not affecting the authorized client (which would retry after a delay)
+	elif mac in mac_ban_list:
+		if mac_ban_list[mac]['record'] >= 3:
+			abort(500)
+	elif secretKey in key_ban_list:
+		if key_ban_list[secretKey]['record'] >= 3:
+			abort(500)
+	elif re.search(OPERATORS,mac+secret) is not None:
+		strike(ip,mac,secretKey,3)
+		abort(500)
 
 #  Takes in a POST request with a json object containing a SINGLE MAC address
 #  Returns a secret key based on the MAC address and a HTTP Code 201
@@ -280,6 +306,35 @@ def databaseReset():
 		return "Action Completed", 202
 	else:
 		return "Permission Denied", 403
+
+def strike(ip,mac,secretKey,strikes):
+	if ip is not None:
+		if ip in ip_ban_list:
+			newEntry = ip_ban_list[ip]['record'] + strikes
+			ip_ban_list.remove(ip)
+			ip_ban_list.append(ip)
+			ip_ban_list[ip]['record'] = newEntry
+		else:
+			ip_ban_list.append(mac)
+			mac_ban_list[mac]['record'] = strikes
+	if mac is not None:
+		if mac in secretKey:
+			newEntry = mac_ban_list[mac]['record'] + strikes
+			mac_ban_list.remove(mac)
+			mac_ban_list.append(mac)
+			mac_ban_list[mac]['record'] = newEntry
+		else:
+			mac_ban_list.append(mac)
+			mac_ban_list[mac]['record'] = strikes
+	if secretKey is not None:
+		if secretKey in secretKey:
+			newEntry = key_ban_list[secretKey]['record'] + strikes
+			key_ban_list.remove(secretKey)
+			key_ban_list.append(secretKey)
+			key_ban_list[secretKey]['record'] = newEntry
+		else:
+			key_ban_list.append(secretKey)
+			key_ban_list[secretKey]['record'] = strikes
 
 
 @atexit.register
