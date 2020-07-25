@@ -8,7 +8,7 @@ import os
 import time
 import datetime
 import atexit
-from cachetools import TTLCache
+from expiringdict import ExpiringDict
 
 import CustomCloudantModules as ccm
 import creds
@@ -16,47 +16,44 @@ import creds
 isMacAddr = re.compile(r"([\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2})")
 isFloodAddr = re.compile("FF:FF:FF:FF:FF:FF",re.I)
 OPERATORS = re.compile('SELECT|UPDATE|INSERT|DELETE|\*|OR|=', re.IGNORECASE)
-ip_ban_list = TTLCache(maxsize=30*8000000, ttl=15*60)
-mac_ban_list = TTLCache(maxsize=50*8000000, ttl=15*60)
-key_ban_list = TTLCache(maxsize=20*8000000, ttl=15*60)
+
+ip_ban_list = ExpiringDict(max_len=50*50000, max_age_seconds=15*60)
+mac_ban_list = ExpiringDict(max_len=25*50000, max_age_seconds=15*60)
+key_ban_list = ExpiringDict(max_len=25*1230, max_age_seconds=15*60)
 
 ccm.init()
 
 app = flask.Flask(__name__)
 @app.before_request
 def block_method():
-	ip_ban_list.expire()
-	mac_ban_list.expire()
-	key_ban_list.expire()
 	ip = request.environ.get('REMOTE_ADDR')
 	data = request.get_json(force=True)
 	if 'Self' in data:
-		mac = parseMacAddr(data['Self'])[0]
+		mac = parseMacAddr(data['Self'][0])
 	else:
 		mac = None
 	if 'Secret' in data:
 		secretKey = data['Secret']
 	else:
 		secretKey = None
-	if ip in ip_ban_list:
-		if ip_ban_list[ip]['record'] >= 3:
+	if ip in ip_ban_list.keys():
+		if ip_ban_list[ip] >= 3:
 			strike(ip,mac,secretKey,1)
-			abort(500)  # Returning a 500 error is an attempt to break (inexperienced) attackers' scripts that assume 500 errors are exploits,
-			# thus effectively overwhelming them with false positives while not affecting the authorized client (which would retry after a delay)
-	elif mac in mac_ban_list:
-		if mac_ban_list[mac]['record'] >= 3:
+			abort(403)
+	elif mac in mac_ban_list.keys():
+		if mac_ban_list[mac] >= 3:
 			strike(ip,mac,secretKey,1)
-			abort(500)
-	elif secretKey in key_ban_list:
-		if key_ban_list[secretKey]['record'] >= 3:
+			abort(403)
+	elif secretKey in key_ban_list.keys():
+		if key_ban_list[secretKey] >= 3:
 			strike(ip,mac,secretKey,1)
-			abort(500)
+			abort(403)
 	elif re.search(OPERATORS,repr(mac)+repr(secretKey)) is not None:
 		strike(ip,mac,secretKey,3)
-		abort(500)
+		abort(403)
 	elif 'COVIDContactTracerApp' not in request.user_agent.string and creds.adminAgent not in request.user_agent.string:
 		strike(ip,mac,secretKey,3)
-		abort(500)
+		abort(403)
 
 #  Takes in a POST request with a json object containing a SINGLE MAC address
 #  Returns a secret key based on the MAC address and a HTTP Code 201
@@ -204,7 +201,7 @@ def initNewUser(selfList):
 	secret = ""
 	time = datetime.datetime.fromisoformat('2011-11-04 00:05:23.283')
 	if not ccm.personExists(addr):
-		secret = hashlib.sha224((addr+str(os.urandom(128))).encode('utf-8')).hexdigest()
+		secret = hashlib.sha224((addr+str(os.urandom(128))+creds.salt).encode('utf-8')).hexdigest()
 		success = ccm.addPerson(addr,4,secret,time)  # States: 1. Recovered, 2. Positive, 3. Contacted, 4. Neutral
 		if not success:
 			raise cloudant.error.CloudantDatabaseException
@@ -351,9 +348,9 @@ def clearCache():
 		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return "Permission Denied",403
 	if data['key'] == creds.resetAuth:
-		ip_ban_list.expire(time=time.monotonic()+15*60)
-		mac_ban_list.expire(time=time.monotonic()+15*60)
-		key_ban_list.expire(time=time.monotonic()+15*60)
+		ip_ban_list = []
+		mac_ban_list = []
+		key_ban_list = []
 		return "Action Completed", 202
 	else:
 		strike(request.environ.get('REMOTE_ADDR'),None,None,3)
@@ -362,25 +359,22 @@ def clearCache():
 def strike(ip,mac,secretKey,strikes):
 	if ip is not None:
 		if ip in ip_ban_list:
-			newEntry = ip_ban_list[ip]['record'] + strikes
-			ip_ban_list[ip]['record'] = newEntry
+			newEntry = ip_ban_list[ip] + strikes
+			ip_ban_list[ip] = newEntry
 		else:
-			ip_ban_list[ip] = {}
-			ip_ban_list[ip]['record'] = strikes
+			ip_ban_list[ip] = strikes
 	if mac is not None:
 		if mac in mac_ban_list:
-			newEntry = mac_ban_list[mac]['record'] + strikes
-			mac_ban_list[mac]['record'] = newEntry
+			newEntry = mac_ban_list[mac] + strikes
+			mac_ban_list[mac] = newEntry
 		else:
-			mac_ban_list[mac] = {}
-			mac_ban_list[mac]['record'] = strikes
+			mac_ban_list[mac] = strikes
 	if secretKey is not None:
 		if secretKey in key_ban_list:
-			newEntry = key_ban_list[secretKey]['record'] + strikes
-			key_ban_list[secretKey]['record'] = newEntry
+			newEntry = key_ban_list[secretKey]+ strikes
+			key_ban_list[secretKey] = newEntry
 		else:
-			key_ban_list[secretKey] = {}
-			key_ban_list[secretKey]['record'] = strikes
+			key_ban_list[secretKey] = strikes
 
 
 @atexit.register
