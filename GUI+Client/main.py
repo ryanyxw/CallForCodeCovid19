@@ -82,7 +82,7 @@ class storageUnit():
         if macAddress in this.store.get("macDict")["value"]:
             #this.store.get("macDict")["value"][macAddress] += [time]#HEREEEee
             tempNewMacDict = this.store.get("macDict")["value"]
-            tempNewMacDict[macAddress] += [time]
+            tempNewMacDict[macAddress] = time
             this.store.put("macDict", value = tempNewMacDict)
             tempNewMacDict = 0
 
@@ -98,7 +98,7 @@ class storageUnit():
             tempNewNumEntries = 0
 
             tempNewMacDict = this.store.get("macDict")["value"]
-            tempNewMacDict[macAddress] = [time]
+            tempNewMacDict[macAddress] = time
             this.store.put("macDict", value = tempNewMacDict)
             tempNewMacDict = 0
 
