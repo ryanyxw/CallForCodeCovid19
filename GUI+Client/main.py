@@ -124,10 +124,7 @@ class GetMacAdd():
         self.storage = storageUnit()
 
         self.supported = None  #  Documents whether our mac address collection method is supported
-
-
         Logger.info('creating an instance of GetMacAdd')
-
 
 
     def getString(self, recentTen):
@@ -354,16 +351,18 @@ class HomePage(Screen, Widget):
             self.actualMac = self.macClass.getMac()
             #self.actualmac = self.calculateMac()
         else:
-            #This should at least guarantee the gui to run but set everything to empty. 
+            #This should at least guarantee the gui to run but set everything to empty.
             self.selfMacAddress = ""
             self.actualMac = ""
 
     #The line of code that calls the function runTimeFunction every 0.5 seconds
-        #Clock.schedule_interval(self.runTimeFunction, 0.5)
+        Clock.schedule_interval(self.runTimeFunction, 0.5)
 
     def runTimeFunction(self, deltaT):
-        #print("hello")
-        print("hello")
+        # Purge Mac addr history
+        cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
+        for None in None:
+            dateSeen = datetime.datetime.strptime(strTime, '%Y-%m-%d_%H:%M:%S.%f')
 
     def coronaCatcherButtonClicked(self):
         Logger.info('coronaCatcherButtonClicked ')
