@@ -71,7 +71,7 @@ WindowManager:
         text: "Your Mac: " + root.selfMacAddress
     ScaleLabel:
         id: status
-        pos_hint: {"center_x": 0.5, "bottom": 0}
+        pos_hint: {"center_x": 0.5, "bottom": 0.3}
         text: root.store.get("homeLabel")["value"]
         size_hint: 1, 0.05
     Button:
@@ -88,7 +88,7 @@ WindowManager:
     name: "sidebar"
     GridLayout:
         cols: 1
-        
+
 
         ScaleButton:
             text: "Home"
