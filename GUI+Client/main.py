@@ -11,6 +11,7 @@ from kivy.logger import Logger
 from kivy.logger import LoggerHistory
 from kivy.clock import Clock
 import kivy.config
+
 #Changes the window size
 from kivy.core.window import Window
 import kivy.metrics
