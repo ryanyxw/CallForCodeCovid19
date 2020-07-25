@@ -85,7 +85,7 @@ class storageUnit():
             tempNewMacDict[macAddress] += [time]
             this.store.put("macDict", value = tempNewMacDict)
             tempNewMacDict = 0
-            
+
             tempNewRecentTen = this.store.get("recentTen")["value"]
             tempNewRecentTen = [[time, macAddress]] + tempNewRecentTen[:9]
             this.store.put("recentTen", value = tempNewRecentTen)
@@ -96,17 +96,17 @@ class storageUnit():
             tempNewNumEntries += 1
             this.store.put("numEntries", value = tempNewNumEntries)
             tempNewNumEntries = 0
-            
+
             tempNewMacDict = this.store.get("macDict")["value"]
             tempNewMacDict[macAddress] = [time]
             this.store.put("macDict", value = tempNewMacDict)
             tempNewMacDict = 0
-            
+
             tempNewRecentTen = this.store.get("recentTen")["value"]
             tempNewRecentTen = [[time, macAddress]] + tempNewRecentTen[:9]
             this.store.put("recentTen", value = tempNewRecentTen)
             tempNewRecentTen = 0
-            
+
             Logger.info('addEntry added ' + macAddress + ' met at '+time)
 #Checks if the previous prevNetwork is the same as foreignSet, which is a set
     def isSamePrevNetwork(self, foreignSet):
@@ -224,9 +224,9 @@ class GetMacAdd():
                 digit = re.search(isContractionMid,mac).group(1)
                 mac = re.sub(isContractionMid,":" + digit + "0:",mac)
             macList.append(mac)
-            
+
         Logger.debug('getMac: filtered into ' + repr(macList))
-        
+
 #macList is the list of mac addresses that was returned by the arp-a
         compareSet = set(macList)
         diffArr = self.storage.isSamePrevNetwork(compareSet)
@@ -239,7 +239,7 @@ class GetMacAdd():
                 self.storage.addEntry(macAdd, str(datetime.datetime.now()))
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
             return self.getString(this.store.get("prevNetwork")["value"])
-        
+
 #A method used for testing. Same as getMac, but adds on a new mac to test
     def testGetMac(self):
         macInitStr = self.tryGetMac()
@@ -264,7 +264,7 @@ class GetMacAdd():
             macList.append(mac)
 
         Logger.debug('getMac: filtered into ' + repr(macList))
-        macList += ["00:00:00:00:00:00"]
+        macList += ["44:44:44:44:44:44"]
         compareSet = set(macList)
         diffArr = self.storage.isSamePrevNetwork(compareSet)
         if len(diffArr) == 0:
@@ -288,7 +288,7 @@ class HomePage(Screen, Widget):
         #variable used to reference the getMac class
         self.macClass = GetMacAdd()
         #Variable used to record your own personal macAddress
-        self.selfMacAddress = str(self.macClass.getMacSelf()[0])
+        self.selfMacAddress = self.macClass.getMacSelf()[0]
         Logger.info('creating an instance of HomePage')
 #Determines if the server initiation is correct (should only be a one time thing)
         isSuccessful = True
@@ -299,14 +299,25 @@ class HomePage(Screen, Widget):
         client.init(this.appPath + os.sep + "client.log", this.logVerbosity)
         #self.macClass = GetMacAdd()
 #Checks if there is a file. If there is not, initiate all 4 necessary parts
-        
+
         #Variable that stores what the status is for the user. This is just initialization
         self.statusLabel = ObjectProperty(None)
         #Variable that stores what the mac addresses are printed on. This is just initialization
         self.macDisplay = ObjectProperty(None)
         print("isExist before = " + repr(this.store.exists('numEntries')))
 #If this is a new user
+
         if (not this.store.exists('numEntries')):
+            this.store.put("numEntries", value = 0)
+            this.store.put("macDict", value = dict())
+            this.store.put("recentTen", value = list())
+            this.store.put("prevNetwork", value = dict())
+#                self.statusLabel.text = "Status: Account Registered"
+            this.store.put("homeLabel", value = "Status: Account Registered")
+            this.store.put("quitAppLabel", value = "Status: Click to delete all data")
+            this.store.put("sendDataLabel", value = "Status: Click to report infected")
+            Logger.info('Secret Key set to ' + 'empty string')
+            this.store.put("secretKey", value = '')
             #this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
             Logger.info('Self Mac Address set to ' + self.macClass.getMacSelf()[0])
             #Stores the personal mac address in the JSOn file
@@ -318,14 +329,6 @@ class HomePage(Screen, Widget):
                     #All initialization
                     Logger.info('Secret Key set to ' + tempSecret)
                     this.store.put("secretKey", value = tempSecret)
-                    this.store.put("numEntries", value = 0)
-                    this.store.put("macDict", value = dict())
-                    this.store.put("recentTen", value = list())
-                    this.store.put("prevNetwork", value = dict())
-#                self.statusLabel.text = "Status: Account Registered"
-                    this.store.put("homeLabel", value = "Status: Account Registered")
-                    this.store.put("quitAppLabel", value = "Status: Click to delete all data")
-                    this.store.put("sendDataLabel", value = "Status: Click to report infected")
             elif (tempSecret == 2):
                 this.store.put("homeLabel", value = "Status: Server Error, Please quit the app and try again (2)")
                 isSuccessful = False
@@ -342,11 +345,15 @@ class HomePage(Screen, Widget):
         if (isSuccessful):
 #macClass variable is just used as a reference to be able to call the getMac class
             #Stores self mac address in selfMacAddress
+
             self.selfMacAddress = self.store.get("selfMac")["value"] #Assumes the first mac address is self mac address
             #Stores the actual mac addresses that we get from getMac into actualMac. This is used to display the network mac addresses the first time users
             #Open the app
             self.actualMac = self.macClass.getMac()
             #self.actualmac = self.calculateMac()
+        else:
+            self.selfMacAddress = ""
+            self.actualMac = ""
 
     #The line of code that calls the function runTimeFunction every 0.5 seconds
         #Clock.schedule_interval(self.runTimeFunction, 0.5)
@@ -392,7 +399,7 @@ class HomePage(Screen, Widget):
         else:
             self.statusLabel.text = "Last checked at " + str(lastAccess) + ", please only check once every 8 hours. Feel free to return at " + str(allowedTime)
             this.store.put("homeLabel", value = "Last checked at " + str(lastAccess) + ", please only check once every 8 hours. Feel free to return at " + str(allowedTime))
-    
+
     #This test function is used to mimic adding a new mac to the batch
     def testFunction(self): #Delete kivy line 75 - 79
         #actualMac is the variable that stores the current network after arp-a again
@@ -516,30 +523,30 @@ class SeeDataPage(Screen):
 
 #Stores the recentTen aspect of the json file, used for the first initiation of the user
         self.recentTen = this.store.get("recentTen")["value"]
-        
+
         #This variable references the label within the page (used for potentially changing the top10 by renewing)
         self.displayTen = ObjectProperty(None)
 
 
         Logger.info("BEFORE ASSIGN VALUES")
-        
+
 
 #This method changes the self.data so that it reflects the new recentTen
     def renewRecentTen(self):
         Logger.info('Renew Recent Ten button clicked')
         self.recentTen = this.store.get("recentTen")["value"]
         self.displayTen.text = self.convertRecentTenToStr()
-        
+
 
     def convertRecentTenToStr(self):
         returnStr = ""
         for pair in self.recentTen:
             returnStr += "Time: " + pair[0] + " - Mac: " + pair[1] + "\n\n\n"
         return returnStr
-    
-    
-    
-    
+
+
+
+
 
 
 #Represent the transitions between the windows above
