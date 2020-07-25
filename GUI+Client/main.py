@@ -352,16 +352,6 @@ class HomePage(Screen, Widget):
                     del macDict[mac]
             this.store.put("macDict", value = macDict)
             del macDict
-
-            if "LastQueryTime" in this.store:
-                lastAccess = this.store.get("LastQueryTime")['value']
-                lastAccess = datetime.datetime.strptime(lastAccess, '%Y-%m-%d_%H:%M:%S.%f')
-            else:
-                lastAccess = datetime.datetime.fromisoformat('2011-11-04 00:05:23.283')
-            autoTime = lastAccess + datetime.timedelta(hours=12)
-            currentTime = datetime.datetime.now()
-            if autoTime < currentTime:
-                coronaCatcherButtonClicked()
         else:
             #This should at least guarantee the gui to run but set everything to empty.
             self.selfMacAddress = ""
@@ -455,6 +445,7 @@ class QuitAppPage(Screen):
         Logger.info('Delete data and quit clicked')
         returnValue = client.forgetUser(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnValue == 0):
+            os.remove(this.appPath + os.sep + this.storeName + '.json')
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nSucess! You may quit the app"
             this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nSucess! You may quit the app")
         elif (returnValue == 2):
