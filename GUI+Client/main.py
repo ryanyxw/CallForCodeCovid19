@@ -36,7 +36,7 @@ import netifaces
 #Status bar change color if there is an error
 
 
-#Make sure to make selfMac a list of own self mac
+#Make sure to make selfMac a csv string of mac addressses
 this = sys.modules[__name__]
 if platform != 'android':
     if os.path.isdir(Path.home()):
@@ -308,6 +308,7 @@ class HomePage(Screen, Widget):
 #If this is a new user
 
         if (not this.store.exists('numEntries')):
+            #First initiates everything within the json file
             this.store.put("numEntries", value = 0)
             this.store.put("macDict", value = dict())
             this.store.put("recentTen", value = list())
@@ -316,6 +317,7 @@ class HomePage(Screen, Widget):
             this.store.put("homeLabel", value = "Status: Account Registered")
             this.store.put("quitAppLabel", value = "Status: Click to delete all data")
             this.store.put("sendDataLabel", value = "Status: Click to report infected")
+            #Sets the secretCode to be empty screen
             Logger.info('Secret Key set to ' + 'empty string')
             this.store.put("secretKey", value = '')
             #this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
@@ -352,6 +354,7 @@ class HomePage(Screen, Widget):
             self.actualMac = self.macClass.getMac()
             #self.actualmac = self.calculateMac()
         else:
+            #This should at least guarantee the gui to run but set everything to empty. 
             self.selfMacAddress = ""
             self.actualMac = ""
 
