@@ -46,6 +46,7 @@ else:
 this.versionNumber = '1.0.0'
 this.logVerbosity = 50
 this.storeName = 'local'
+this.deleteAllData = False
 
 kivy.config.log_dir = this.appPath
 if this.logVerbosity < 10:
@@ -440,12 +441,12 @@ class QuitAppPage(Screen):
 
         self.statusLabel = ObjectProperty(None)
 
-
     def deleteDataAndQuitButtonClicked(self):
         Logger.info('Delete data and quit clicked')
         returnValue = client.forgetUser(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnValue == 0):
-            os.remove(this.appPath + os.sep + this.storeName + '.json')
+            this.deleteAllData = True
+            Logger.info('Marked local files for deletion')
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nSucess! You may quit the app"
             this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nSucess! You may quit the app")
         elif (returnValue == 2):
@@ -464,7 +465,6 @@ class QuitAppPage(Screen):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nserver returned unknown command : " + str(returnValue)
             this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nserver returned unknown command : " + str(returnValue))
 
-    pass
 
 #SendData class page (reference my.kv file)
 class SendDataPage(Screen):
@@ -579,6 +579,11 @@ if __name__ == "__main__":
         for log in LoggerHistory.history:
             f.write(repr(log) +'\n')
         f.close()
+        if this.deleteAllData:
+            for entry in os.scandir(this.appPath):
+                if (not entry.path.endswith(".py") and not entry.path.endswith(".kv")) and entry.is_file():
+                    os.remove(entry.path)
+            Logger.info('Deleted local storage')
         exit()
     except KeyboardInterrupt:
         Logger.critical('App Exiting')
@@ -587,6 +592,11 @@ if __name__ == "__main__":
             f.write(repr(log) +'\n')
         f.close()
         client.freeResources()
+        if this.deleteAllData:
+            for entry in os.scandir(this.appPath):
+                if (not entry.path.endswith(".py") and not entry.path.endswith(".kv")) and entry.is_file():
+                    os.remove(entry.path)
+            Logger.info('Deleted local storage')
         exit()
     except Exception as e:
         Logger.critical("Exception occurred", exc_info=True)

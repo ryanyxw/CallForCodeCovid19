@@ -32,20 +32,17 @@ def block_method():
 		mac = parseMacAddr(data['Self'])[0]
 	else:
 		mac = None
-	if 'Secret' in data:
-		secretKey = data['Secret']
-	else:
-		secretKey = None
-	if ip in ip_ban_list.keys():
-		if ip_ban_list[ip] >= 3:
+	secretKey = data.get('Secret')
+	if ip_ban_list.get(ip) is not None:
+		if ip_ban_list.get(ip) >= 3:
 			strike(ip,mac,secretKey,1)
 			abort(403)
-	elif mac in mac_ban_list.keys():
-		if mac_ban_list[mac] >= 3:
+	elif mac_ban_list.get(mac) is not None:
+		if mac_ban_list.get(mac) >= 3:
 			strike(ip,mac,secretKey,1)
 			abort(403)
-	elif secretKey in key_ban_list.keys():
-		if key_ban_list[secretKey] >= 3:
+	elif key_ban_list.get(secretKey) is not None:
+		if key_ban_list.get(secretKey) >= 3:
 			strike(ip,mac,secretKey,1)
 			abort(403)
 	elif re.search(OPERATORS,repr(mac)+repr(secretKey)) is not None:
