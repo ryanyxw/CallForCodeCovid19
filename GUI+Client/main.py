@@ -9,7 +9,6 @@ from kivy.storage.jsonstore import JsonStore
 from kivy.utils import platform
 from kivy.logger import Logger
 from kivy.logger import LoggerHistory
-from kivy.clock import Clock
 import kivy.config
 
 #Changes the window size
@@ -28,9 +27,6 @@ import re
 import client
 #network interfaces
 import netifaces
-#Logging
-import logging
-import logging.handlers
 #WHen return from server, remember type
 #os.platform used to identify the os
 #Client secret key
@@ -40,7 +36,7 @@ import logging.handlers
 this = sys.modules[__name__]
 if platform != 'android':
     if os.path.isdir(Path.home()):
-        this.appPath = str(Path.home()) + os.sep + '/.CovidContactTracer'
+        this.appPath = str(Path.home()) + os.sep + '.CovidContactTracer'
         if not os.path.isdir(this.appPath):
             os.mkdir(this.appPath)
     else:
@@ -172,7 +168,7 @@ class GetMacAdd():
         try:
             result = subprocess.run(['arp', '-a'], stdout=subprocess.PIPE)
             self.supported = True #  Documents whether our mac address collection method is supported
-            Logger.debug('tryGetMac: executed arp -a successfully and got ' + str(result))
+            Logger.debug('tryGetMac: executed arp -a successfully and got ' + repr(result))
             return result
         except subprocess.CalledProcessError:
             fails = fails + 1
@@ -273,39 +269,51 @@ class HomePage(Screen, Widget):
             self.macClass = GetMacAdd()
             self.selfMacAddress = str(self.macClass.getMacSelf()[0]) #Assumes the first mac address is self mac address
             self.actualMac = self.macClass.getMac()
-            
-            #The line of code that calls the function runTimeFunction every 0.5 seconds
-            #Clock.schedule_interval(self.runTimeFunction, 0.5)
-            
+
+    #The line of code that calls the function runTimeFunction every 0.5 seconds
+        Clock.schedule_interval(self.runTimeFunction, 0.5)
+
     def runTimeFunction(self, deltaT):
         #print("hello")
         print("hello")
 
     def coronaCatcherButtonClicked(self):
         Logger.info('coronaCatcherButtonClicked ')
-        returnVal = client.queryMyMacAddr(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
-        if (returnVal == -1):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine"
-            this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine")
-        elif (returnVal == 0):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!"
-            this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!")
-        elif (returnVal == 2):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)"
-            this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)")
-        elif (returnVal == 3):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect secret key, you're kinda screwed (3)"
-            this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Incorrect secret key, you're kinda screwed (3)")
-        elif (returnVal == 4):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid mac address, you're kinda screwed (4)"
-            this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Invalid mac address, you're kinda screwed (4)")
-        elif (returnVal == 5):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Overload. Please do not click button twice"
-            this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Server Overload. Please do not click button twice")
-            print("TRUEEE")
+        if "LastQueryTime" in this.store:
+            lastAccess = this.store.get("LastQueryTime")['value']
+            lastAccess = datetime.datetime.strptime(lastAccess, '%Y-%m-%d_%H:%M:%S.%f')
         else:
-            self.statusLabel.text = "1 returned"
-            this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", 1 returned")
+            lastAccess = datetime.datetime.fromisoformat('2011-11-04 00:05:23.283')
+        allowedTime = lastAccess + datetime.timedelta(hours=8)
+        if allowedTime < currentTime:
+            returnVal = client.queryMyMacAddr(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
+            now = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S.%f')
+            this.store.put("LastQueryTime", value = now)
+            if (returnVal == -1):
+                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine"
+                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine")
+            elif (returnVal == 0):
+                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!"
+                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!")
+            elif (returnVal == 2):
+                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)"
+                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)")
+            elif (returnVal == 3):
+                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect secret key, you're kinda screwed (3)"
+                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Incorrect secret key, you're kinda screwed (3)")
+            elif (returnVal == 4):
+                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid mac address, you're kinda screwed (4)"
+                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Invalid mac address, you're kinda screwed (4)")
+            elif (returnVal == 5):
+                self.statusLabel.text = "Please only check once every 8 hours."
+                this.store.put("homeLabel", value = "Please only check once every 8 hours.")
+            else:
+                self.statusLabel.text = "1 returned"
+                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", 1 returned")
+        else:
+            self.statusLabel.text = "Last checked at " + lastAccess + ", please only check once every 8 hours. Feel free to return at " + allowedTime
+            this.store.put("homeLabel", value = "Last checked at " + lastAccess + ", please only check once every 8 hours. Feel free to return at " + allowedTime)
+
 
 
 #This method is used when we click the button to check our current network mac

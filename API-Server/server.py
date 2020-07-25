@@ -51,7 +51,6 @@ def receivePositiveReport():
 	data = request.get_json(force=True)
 	if not ('Self' in data and 'Secret' in data and 'MetAddrList' in data):
 		return 'Improper Request', 400
-	print('Self' in data and 'Secret' in data and 'MetAddrList' in data)
 	self = data['Self']
 	secret = data['Secret']
 	metAddrList = data['MetAddrList']
@@ -249,9 +248,10 @@ def queryAddr(addrList):
 def parseMacAddr(AddrStr):
 	#sanitization of all input
 	addrList = re.findall(isMacAddr,AddrStr)
+	addrFound = []
 	for addr in addrList:
-		if re.match(isFloodAddr,addr) is not None:
-			addrList.remove(addr)
+		if re.match(isFloodAddr,addr) is None:
+			addrFound.append(addr.upper())
 	return addrList
 
 
