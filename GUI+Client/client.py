@@ -1,12 +1,10 @@
 import pycurl
 import sys
 import json
-import urllib.parse
 import re
-try:
-    from io import BytesIO
-except ImportError:
-    from StringIO import StringIO as BytesIO
+
+from io import BytesIO
+
 import logging
 import logging.handlers
 import os
