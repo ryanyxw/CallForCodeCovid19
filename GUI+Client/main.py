@@ -28,10 +28,6 @@ import re
 import client
 #network interfaces
 import netifaces
-#WHen return from server, remember type
-#os.platform used to identify the os
-#Client secret key
-#Guiunicorn
 #Using a for loop to continue requests if the request failed
 #Status bar change color if there is an error
 
@@ -356,6 +352,16 @@ class HomePage(Screen, Widget):
                     del macDict[mac]
             this.store.put("macDict", value = macDict)
             del macDict
+
+            if "LastQueryTime" in this.store:
+                lastAccess = this.store.get("LastQueryTime")['value']
+                lastAccess = datetime.datetime.strptime(lastAccess, '%Y-%m-%d_%H:%M:%S.%f')
+            else:
+                lastAccess = datetime.datetime.fromisoformat('2011-11-04 00:05:23.283')
+            autoTime = lastAccess + datetime.timedelta(hours=12)
+            currentTime = datetime.datetime.now()
+            if autoTime < currentTime:
+                coronaCatcherButtonClicked()
         else:
             #This should at least guarantee the gui to run but set everything to empty.
             self.selfMacAddress = ""
@@ -365,7 +371,6 @@ class HomePage(Screen, Widget):
         Clock.schedule_interval(self.runTimeFunction, 10)
 
     def runTimeFunction(self, deltaT):
-        # Purge Mac addr history
         pass
 
 
