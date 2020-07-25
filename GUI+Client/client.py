@@ -47,6 +47,7 @@ def initSelf(MacAddrSelf):
     this.__logger__.debug("initSelf:postfields=" + postfields)
     c.setopt(c.POSTFIELDS, postfields)
     c.setopt(c.WRITEFUNCTION, this.__buffer_obj__.write)
+    c.setopt(pycurl.USERAGENT, 'COVIDContactTracerApp/1.0')
     c.perform()
 
     code = c.getinfo(pycurl.HTTP_CODE)
@@ -100,6 +101,7 @@ def positiveReport(MacAddrSelf,secretKey,metAddrList):
     this.__logger__.info("positiveReport:postfields="+postfields)
     c.setopt(c.POSTFIELDS, postfields)
     c.setopt(c.WRITEFUNCTION, this.__buffer_obj__.write)
+    c.setopt(pycurl.USERAGENT, 'COVIDContactTracerApp/1.0')
     c.perform()
 
     code = c.getinfo(pycurl.HTTP_CODE)
@@ -145,6 +147,7 @@ def negativeReport(MacAddrSelf,secretKey):
     this.__logger__.info("negativeReport:postfields="+postfields)
     c.setopt(c.POSTFIELDS, postfields)
     c.setopt(c.WRITEFUNCTION, this.__buffer_obj__.write)
+    c.setopt(pycurl.USERAGENT, 'COVIDContactTracerApp/1.0')
     c.perform()
 
     code = c.getinfo(pycurl.HTTP_CODE)
@@ -191,6 +194,7 @@ def queryMyMacAddr(self,secret):
     this.__logger__.debug("QueryMyMacAddr:postfields="+postfields)
     c.setopt(c.POSTFIELDS, postfields)
     c.setopt(c.WRITEFUNCTION, this.__buffer_obj__.write)
+    c.setopt(pycurl.USERAGENT, 'COVIDContactTracerApp/1.0')
     c.perform()
 
     code = c.getinfo(pycurl.HTTP_CODE)
@@ -242,6 +246,7 @@ def forgetUser(MacAddrSelf, secretKey):
     # and data to send in request body.
     c.setopt(c.POSTFIELDS, postfields)
     c.setopt(c.WRITEFUNCTION, this.__buffer_obj__.write)
+    c.setopt(pycurl.USERAGENT, 'COVIDContactTracerApp/1.0')
     c.perform()
 
     code = c.getinfo(pycurl.HTTP_CODE)
