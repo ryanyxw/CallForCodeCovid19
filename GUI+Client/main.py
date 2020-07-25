@@ -28,10 +28,6 @@ import re
 import client
 #network interfaces
 import netifaces
-#WHen return from server, remember type
-#os.platform used to identify the os
-#Client secret key
-#Guiunicorn
 #Using a for loop to continue requests if the request failed
 #Status bar change color if there is an error
 
@@ -177,7 +173,7 @@ class GetMacAdd():
                 f=open(os.sep+"proc"+os.sep+"net"+os.sep+"arp", "r")
                 result = f.read()
                 self.supported = True  #  Documents whether our mac address collection method is supported
-                Logger.critical('tryGetMac: read proc/net/arp successfully and got ' + result)
+                Logger.info('tryGetMac: read proc/net/arp successfully and got ' + result)
                 return result
             else:
                 Logger.warning("read /proc/net/arp failed")
@@ -201,7 +197,7 @@ class GetMacAdd():
 #Gets the mac address. Returns the previous (current) network mac address
     def getMac(self):
         macInitStr = self.tryGetMac()
-        Logger.error("We have entered getMac")
+        Logger.debug("We have entered getMac")
         macInitStr = repr(macInitStr)
         Logger.debug('getMac: recieved ' + macInitStr)
         isMacAddr = re.compile(r"([\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2})")
@@ -303,7 +299,6 @@ class HomePage(Screen, Widget):
         self.macDisplay = ObjectProperty(None)
         print("isExist before = " + repr(this.store.exists('numEntries')))
 #If this is a new user
-
         if (not this.store.exists('numEntries')):
             #First initiates everything within the json file
             this.store.put("numEntries", value = 0)
@@ -340,29 +335,34 @@ class HomePage(Screen, Widget):
             else:
                 this.store.put("homeLabel", value = "Status: Unknown error occurred. Please restart the app. If this persists, please contact developers. ")
                 isSuccessful = False
-
         if (isSuccessful):
 #macClass variable is just used as a reference to be able to call the getMac class
             #Stores self mac address in selfMacAddress
-
             self.selfMacAddress = self.store.get("selfMac")["value"] #Assumes the first mac address is self mac address
             #Stores the actual mac addresses that we get from getMac into actualMac. This is used to display the network mac addresses the first time users
             #Open the app
             self.actualMac = self.macClass.getMac()
             #self.actualmac = self.calculateMac()
+            cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
+            macDict = this.store.get("macDict")["value"]
+            for mac in macDict.keys():
+                strTime = macDict[mac]
+                dateSeen = datetime.datetime.strptime(strTime, '%Y-%m-%d_%H:%M:%S')
+                if dateSeen < cutoff:
+                    del macDict[mac]
+            this.store.put("macDict", value = macDict)
+            del macDict
         else:
             #This should at least guarantee the gui to run but set everything to empty.
             self.selfMacAddress = ""
             self.actualMac = ""
 
     #The line of code that calls the function runTimeFunction every 0.5 seconds
-        Clock.schedule_interval(self.runTimeFunction, 0.5)
+        Clock.schedule_interval(self.runTimeFunction, 10)
 
     def runTimeFunction(self, deltaT):
-        # Purge Mac addr history
-        cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
-        for None in None:
-            dateSeen = datetime.datetime.strptime(strTime, '%Y-%m-%d_%H:%M:%S.%f')
+        pass
+
 
     def coronaCatcherButtonClicked(self):
         Logger.info('coronaCatcherButtonClicked ')
@@ -399,8 +399,8 @@ class HomePage(Screen, Widget):
                 self.statusLabel.text = "1 returned"
                 this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 returned")
         else:
-            self.statusLabel.text = "Last checked at " + str(lastAccess) + ", \nplease only check once every 8 hours. \n Feel free to return at " + str(allowedTime)
-            this.store.put("homeLabel", value = "Last checked at " + str(lastAccess) + ", \nplease only check once every 8 hours. \n Feel free to return at " + str(allowedTime))
+            self.statusLabel.text = "Please only check once every 8 hours. Feel free \nto return at " + str(allowedTime)
+            this.store.put("homeLabel", value = "Please only check once every 8 hours. Feel free \nto return at " + str(allowedTime))
 
     #This test function is used to mimic adding a new mac to the batch
     def testFunction(self): #Delete kivy line 75 - 79
@@ -417,7 +417,7 @@ class HomePage(Screen, Widget):
         #This line checks with the server to see if user has already contacted infected individual
         self.coronaCatcherButtonClicked()
         Logger.info('Calculated MAC Addr to be ' + self.actualMac)
-        Logger.critical(self.macClass.getString(self.store.get("prevNetwork")["value"]))
+        Logger.info(self.macClass.getString(self.store.get("prevNetwork")["value"]))
         #This changes the displayed text into the current network by formatting it with the getString method in the macClass
         self.macDisplay.text = self.macClass.getString(self.store.get("prevNetwork")["value"])
         return self.actualMac
@@ -445,6 +445,7 @@ class QuitAppPage(Screen):
         Logger.info('Delete data and quit clicked')
         returnValue = client.forgetUser(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnValue == 0):
+            os.remove(this.appPath + os.sep + this.storeName + '.json')
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nSucess! You may quit the app"
             this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nSucess! You may quit the app")
         elif (returnValue == 2):
