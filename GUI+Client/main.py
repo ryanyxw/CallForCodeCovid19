@@ -360,8 +360,9 @@ class HomePage(Screen, Widget):
 
     def runTimeFunction(self, deltaT):
         # Purge Mac addr history
-        cutoff = datetime.datetime.now() + datetime.timedelta(days=14)
-        pass
+        cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
+        for None in None:
+            dateSeen = datetime.datetime.strptime(strTime, '%Y-%m-%d_%H:%M:%S.%f')
 
     def coronaCatcherButtonClicked(self):
         Logger.info('coronaCatcherButtonClicked ')
