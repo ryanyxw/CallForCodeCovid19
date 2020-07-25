@@ -29,7 +29,7 @@ def block_method():
 	ip = request.environ.get('REMOTE_ADDR')
 	data = request.get_json(force=True)
 	if 'Self' in data:
-		mac = parseMacAddr(data['Self'][0])
+		mac = parseMacAddr(data['Self'])[0]
 	else:
 		mac = None
 	if 'Secret' in data:

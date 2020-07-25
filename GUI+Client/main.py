@@ -236,7 +236,7 @@ class GetMacAdd():
         else:
 #Appends on a new mac address if it does not exist
             for macAdd in diffArr:
-                self.storage.addEntry(macAdd, str(datetime.datetime.now()))
+                self.storage.addEntry(macAdd, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
             return self.getString(this.store.get("prevNetwork")["value"])
 
@@ -273,7 +273,7 @@ class GetMacAdd():
         else:
             for macAdd in diffArr:
                 print("TRUE == " + repr(macAdd))
-                self.storage.addEntry(macAdd, str(datetime.datetime.now()))
+                self.storage.addEntry(macAdd, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
             return self.getString(this.store.get("recentTen")["value"])
 
@@ -379,29 +379,29 @@ class HomePage(Screen, Widget):
             now = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S.%f')
             this.store.put("LastQueryTime", value = now)
             if (returnVal == -1):
-                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine")
+                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou have contacted someone with the virus. Please quarantine"
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou have contacted someone with the virus. Please quarantine")
             elif (returnVal == 0):
-                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!")
+                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou are still safe!"
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou are still safe!")
             elif (returnVal == 2):
-                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)")
+                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error, please quit the app and retry (2)"
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error, please quit the app and retry (2)")
             elif (returnVal == 3):
-                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect secret key, you're kinda screwed (3)"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Incorrect secret key, you're kinda screwed (3)")
+                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, you're kinda screwed (3)"
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, you're kinda screwed (3)")
             elif (returnVal == 4):
-                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid mac address, you're kinda screwed (4)"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Invalid mac address, you're kinda screwed (4)")
+                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, you're kinda screwed (4)"
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, you're kinda screwed (4)")
             elif (returnVal == 5):
                 self.statusLabel.text = "Please only check once every 8 hours."
                 this.store.put("homeLabel", value = "Please only check once every 8 hours.")
             else:
                 self.statusLabel.text = "1 returned"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", 1 returned")
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 returned")
         else:
-            self.statusLabel.text = "Last checked at " + str(lastAccess) + ", please only check once every 8 hours. Feel free to return at " + str(allowedTime)
-            this.store.put("homeLabel", value = "Last checked at " + str(lastAccess) + ", please only check once every 8 hours. Feel free to return at " + str(allowedTime))
+            self.statusLabel.text = "Last checked at " + str(lastAccess) + ", \nplease only check once every 8 hours. \n Feel free to return at " + str(allowedTime)
+            this.store.put("homeLabel", value = "Last checked at " + str(lastAccess) + ", \nplease only check once every 8 hours. \n Feel free to return at " + str(allowedTime))
 
     #This test function is used to mimic adding a new mac to the batch
     def testFunction(self): #Delete kivy line 75 - 79
@@ -446,23 +446,23 @@ class QuitAppPage(Screen):
         Logger.info('Delete data and quit clicked')
         returnValue = client.forgetUser(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnValue == 0):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Sucess! You may quit the app"
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Sucess! You may quit the app")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nSucess! You may quit the app"
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nSucess! You may quit the app")
         elif (returnValue == 2):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Error (2)"
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Server Error (2)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error (2)"
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error (2)")
         elif (returnValue == 3):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", incorrect secret key (3)"
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", incorrect secret key (3)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nincorrect secret key (3)"
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nincorrect secret key (3)")
         elif (returnValue == 4):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", invalid mac addr of self (4)"
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", invalid mac addr of self (4)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \ninvalid mac addr of self (4)"
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \ninvalid mac addr of self (4)")
         elif (returnValue == 1):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", 1 is returned (1)"
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", 1 is returned (1)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 is returned (1)"
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 is returned (1)")
         else:
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", server returned unknown command : " + str(returnValue)
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", server returned unknown command : " + str(returnValue))
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nserver returned unknown command : " + str(returnValue)
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nserver returned unknown command : " + str(returnValue))
 
     pass
 
@@ -486,34 +486,34 @@ class SendDataPage(Screen):
 
         returnVal = client.positiveReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"], self.getCSVString())
         if (returnVal == 2):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)")
         elif (returnVal == 3):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)")
         elif (returnVal == 4):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid CSV. Restart app and contact admin"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Invalid CSV. Restart app and contact admin")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid CSV. Restart app and contact admin"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid CSV. Restart app and contact admin")
         else:
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Get well soon!"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Get well soon!")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Get well soon!"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Get well soon!")
 
     def iJustRecoveredButtonClicked(self):
         Logger.info('iJustRecovered button clicked')
 
         returnVal = client.negativeReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnVal == 2):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)")
         elif (returnVal == 3):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)")
         elif (returnVal == 4):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid MAC Address of self. Restart app and contact admin (4)"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Invalid MAC Address of self. Restart app and contact admin (4)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid MAC Address of self. Restart app and contact admin (4)"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid MAC Address of self. Restart app and contact admin (4)")
         else:
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Good job recovering! "
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Good job recovering! ")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Good job recovering! "
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Good job recovering! ")
 
     pass
 
