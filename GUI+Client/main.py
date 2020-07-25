@@ -275,9 +275,10 @@ class HomePage(Screen, Widget):
             self.actualMac = self.macClass.getMac()
             
             #The line of code that calls the function runTimeFunction every 0.5 seconds
-            Clock.schedule_interval(self.runTimeFunction, 0.5)
+            #Clock.schedule_interval(self.runTimeFunction, 0.5)
             
     def runTimeFunction(self, deltaT):
+        #print("hello")
         print("hello")
 
     def coronaCatcherButtonClicked(self):
@@ -429,8 +430,10 @@ class SeeDataPage(Screen):
 #Stores the recentTen aspect of the json file
         self.recentTen = this.store.get("recentTen")["value"]
 #Creates the grid used to display the information
-        self.table = GridLayout()
-        self.table.cols = 2
+        
+        self.table = ObjectProperty(None)
+#        self.table = GridLayout()
+#        self.table.cols = 2
 
         Logger.info("BEFORE ASSIGN VALUES")
 #Initiates the table by first creating a label into the self.data array, and
@@ -438,9 +441,9 @@ class SeeDataPage(Screen):
         for i in range(len(self.recentTen)):
             self.data[2 * i] = Label(text = self.recentTen[i][1])
             self.data[2 * i + 1] = Label(text = self.recentTen[i][0])
-            self.table.add_widget(self.data[2 * i])
-            self.table.add_widget(self.data[2 * i + 1])
-        self.add_widget(self.table)
+#            self.table.add_widget(self.data[2 * i])
+#            self.table.add_widget(self.data[2 * i + 1])
+#        self.add_widget(self.table)
 
 #This method changes the self.data so that it reflects the new recentTen
     def renewRecentTen(self):

@@ -80,6 +80,7 @@ WindowManager:
     name: "sidebar"
     GridLayout:
         cols: 1
+        
 
         ScaleButton:
             text: "Home"
@@ -198,7 +199,18 @@ WindowManager:
 
 <SeeDataPage>:
     name: "seedata"
-
+    table : list
+    
+    GridLayout:
+        id: list
+        cols: 2
+        size: root.width * 0.8, root.height * 0.8
+        Button: 
+            text : "1"
+        Button: 
+            text : "2"
+        Button:
+            text : "3"
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
         size_hint: 0.2, 0.05
