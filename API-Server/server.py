@@ -1,5 +1,5 @@
 import flask
-from flask import request, jsonify, session
+from flask import request, jsonify, session, abort
 from flask_api import status
 import re
 import json
@@ -11,17 +11,23 @@ import atexit
 from cachetools import TTLCache
 
 import CustomCloudantModules as ccm
+import creds
 
 isMacAddr = re.compile(r"([\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2})")
 isFloodAddr = re.compile("FF:FF:FF:FF:FF:FF",re.I)
-OPERATORS = re.compile('SELECT|UPDATE|INSERT|DELETE|\*|OR|\{|\}|', re.IGNORECASE)
-ip_ban_list = TTLCache(maxsize=50, ttl=15*60)
+OPERATORS = re.compile('SELECT|UPDATE|INSERT|DELETE|\*|OR|=', re.IGNORECASE)
+ip_ban_list = TTLCache(maxsize=30*8000000, ttl=15*60)
+mac_ban_list = TTLCache(maxsize=50*8000000, ttl=15*60)
+key_ban_list = TTLCache(maxsize=20*8000000, ttl=15*60)
 
 ccm.init()
 
 app = flask.Flask(__name__)
 @app.before_request
 def block_method():
+	ip_ban_list.expire()
+	mac_ban_list.expire()
+	key_ban_list.expire()
 	ip = request.environ.get('REMOTE_ADDR')
 	data = request.get_json(force=True)
 	if 'Self' in data:
@@ -29,20 +35,26 @@ def block_method():
 	else:
 		mac = None
 	if 'Secret' in data:
-		secret = data['Secret']
+		secretKey = data['Secret']
 	else:
-		secret = None
+		secretKey = None
 	if ip in ip_ban_list:
-		if ip_ban_list[ip]['records'] >= 3:
+		if ip_ban_list[ip]['record'] >= 3:
+			strike(ip,mac,secretKey,1)
 			abort(500)  # Returning a 500 error is an attempt to break (inexperienced) attackers' scripts that assume 500 errors are exploits,
 			# thus effectively overwhelming them with false positives while not affecting the authorized client (which would retry after a delay)
 	elif mac in mac_ban_list:
 		if mac_ban_list[mac]['record'] >= 3:
+			strike(ip,mac,secretKey,1)
 			abort(500)
 	elif secretKey in key_ban_list:
 		if key_ban_list[secretKey]['record'] >= 3:
+			strike(ip,mac,secretKey,1)
 			abort(500)
-	elif re.search(OPERATORS,mac+secret) is not None:
+	elif re.search(OPERATORS,repr(mac)+repr(secretKey)) is not None:
+		strike(ip,mac,secretKey,3)
+		abort(500)
+	elif 'COVIDContactTracerApp' not in request.user_agent.string and creds.adminAgent not in request.user_agent.string:
 		strike(ip,mac,secretKey,3)
 		abort(500)
 
@@ -53,13 +65,16 @@ def block_method():
 def initSelf():
 	data = request.get_json(force=True)
 	if 'Self' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return 'Improper Request', 400
 	self = data['Self']
 	selfList = parseMacAddr(self)
 	if not selfList:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return 'Bad MAC Address!', 400
 	secret = initNewUser(selfList)
 	if secret == "":
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return 'Already Initiated. ', 403
 	elif secret is None:
 		return status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -83,6 +98,7 @@ def receivePositiveReport():
 	self = parseMacAddr(self)
 	metAddrList = parseMacAddr(metAddrList)
 	if not metAddrList or not self:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return 'Bad MAC Address!', 400
 	valid = verifySecret(self[0],secret)
 	if valid:
@@ -91,6 +107,7 @@ def receivePositiveReport():
 			msg = "Get well soon. "
 		), status.HTTP_201_CREATED
 	else:
+		strike(None,self[0],secret,1)
 		return 'Incorect Secret Key', 403
 
 
@@ -105,10 +122,13 @@ def receiveQueryMyMacAddr():
 	secret = data['Secret']
 	addrList = parseMacAddr(self)
 	if not addrList:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return 'Bad MAC Address!', 400
 	if not verifySecret(addrList[0],secret):
+		strike(None,addrList[0],secret,1)
 		return 'Bad Request Key', 403
 	if not passRateLimit(addrList[0]):
+		strike(None,addrList[0],secret,1)
 		return 'Too many query requests', 429
 	state = queryAddr(addrList)
 	if state == 1:
@@ -123,6 +143,7 @@ def receiveQueryMyMacAddr():
 				 ), status.HTTP_200_OK
 	elif state == -1:
 		updateRateLimit(addrList[0])
+		strike(request.environ.get('REMOTE_ADDR'),addrList[0],secret,1)
 		return 'No such user or invalid keys', 403
 	else:
 		return status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -135,31 +156,37 @@ def receiveQueryMyMacAddr():
 def receiveNegativeReport():
 	data = request.get_json(force=True)
 	if 'Self' not in data or 'Secret' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return 'Improper Request', 400
 	self = data['Self']
 	secret = data['Secret']
 	addr = parseMacAddr(self)
 	if not addr:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return 'Bad MAC Address!', 400
 	valid = verifySecret(addr[0],secret)
 	if valid:
+		strike(None,addr[0],secret,1)
 		markNegative(addr[0], secret)
 		return jsonify(
 			msg = "Stay healthy. "
 		), status.HTTP_201_CREATED
 	else:
 		return 'Incorect Secret Key', 403
+		strike(None,addr[0],secret,1)
 
 
 @app.route('/ForgetMe', methods=["POST"])
 def forgetSelf():
 	data = request.get_json(force=True)
 	if 'Self' not in data or 'Secret' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return 'Improper Request', 400
 	self = data['Self']
 	secret = data['Secret']
 	addr = parseMacAddr(self)
 	if not addr:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return 'Bad MAC Address!', 400
 	valid = verifySecret(addr[0],secret)
 	if valid:
@@ -168,6 +195,7 @@ def forgetSelf():
 			msg = "Goodbye. "
 		), status.HTTP_201_CREATED
 	else:
+		strike(request.environ.get('REMOTE_ADDR'),addr[0],secret,1)
 		return 'Incorect Secret Key', 403
 
 
@@ -298,42 +326,60 @@ def updateRateLimit(macAddr):
 
 @app.route('/resetDatabase', methods=["POST"])
 def databaseReset():
+	if creds.adminAgent not in request.user_agent.string:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return "Permission Denied",403
 	data = request.get_json(force=True)
 	if 'key' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
 		return "Permission Denied",403
 	key = data['key']
 	if ccm.resetDatabase(key):
 		return "Action Completed", 202
 	else:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,3)
+		return "Permission Denied", 403
+
+
+@app.route('/clearCache',methods=["POST"])
+def clearCache():
+	if creds.adminAgent not in request.user_agent.string:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return "Permission Denied",403
+	data = request.get_json(force=True)
+	if 'key' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return "Permission Denied",403
+	if data['key'] == creds.resetAuth:
+		ip_ban_list.expire(time=time.monotonic()+15*60)
+		mac_ban_list.expire(time=time.monotonic()+15*60)
+		key_ban_list.expire(time=time.monotonic()+15*60)
+		return "Action Completed", 202
+	else:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,3)
 		return "Permission Denied", 403
 
 def strike(ip,mac,secretKey,strikes):
 	if ip is not None:
 		if ip in ip_ban_list:
 			newEntry = ip_ban_list[ip]['record'] + strikes
-			ip_ban_list.remove(ip)
-			ip_ban_list.append(ip)
 			ip_ban_list[ip]['record'] = newEntry
 		else:
-			ip_ban_list.append(mac)
-			mac_ban_list[mac]['record'] = strikes
+			ip_ban_list[ip] = {}
+			ip_ban_list[ip]['record'] = strikes
 	if mac is not None:
-		if mac in secretKey:
+		if mac in mac_ban_list:
 			newEntry = mac_ban_list[mac]['record'] + strikes
-			mac_ban_list.remove(mac)
-			mac_ban_list.append(mac)
 			mac_ban_list[mac]['record'] = newEntry
 		else:
-			mac_ban_list.append(mac)
+			mac_ban_list[mac] = {}
 			mac_ban_list[mac]['record'] = strikes
 	if secretKey is not None:
-		if secretKey in secretKey:
+		if secretKey in key_ban_list:
 			newEntry = key_ban_list[secretKey]['record'] + strikes
-			key_ban_list.remove(secretKey)
-			key_ban_list.append(secretKey)
 			key_ban_list[secretKey]['record'] = newEntry
 		else:
-			key_ban_list.append(secretKey)
+			key_ban_list[secretKey] = {}
 			key_ban_list[secretKey]['record'] = strikes
 
 
