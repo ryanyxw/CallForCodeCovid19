@@ -34,6 +34,9 @@ import netifaces
 #Guiunicorn
 #Using a for loop to continue requests if the request failed
 #Status bar change color if there is an error
+
+
+#Make sure to make selfMac a list of own self mac
 this = sys.modules[__name__]
 if platform != 'android':
     if os.path.isdir(Path.home()):
@@ -44,7 +47,7 @@ if platform != 'android':
         raise OSError
 else:
     this.appPath = os.path.dirname(__file__)
-
+this.versionNumber = '1.0.0'
 this.logVerbosity = 50
 this.storeName = 'local'
 
