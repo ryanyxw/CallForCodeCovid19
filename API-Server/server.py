@@ -20,12 +20,16 @@ OPERATORS = re.compile('SELECT|UPDATE|INSERT|DELETE|\*|OR|=', re.IGNORECASE)
 ip_ban_list = ExpiringDict(max_len=50*50000, max_age_seconds=15*60)
 mac_ban_list = ExpiringDict(max_len=25*50000, max_age_seconds=15*60)
 key_ban_list = ExpiringDict(max_len=25*1230, max_age_seconds=15*60)
+maintenance = False
 
 ccm.init()
 
 app = flask.Flask(__name__)
 @app.before_request
-def block_method():
+def before_request():
+	global maintenance
+	if maintenance and request.path != '/maintenance':
+		abort(503)
 	ip = request.environ.get('REMOTE_ADDR')
 	if ip == '127.0.0.1' or ip == '0.0.0.0' or ip == '0.0.0.0.0.0':
 		ip = request.environ.get('HTTP_X_REAL_IP')
@@ -58,6 +62,7 @@ def block_method():
 		strike(ip,mac,secretKey,3)
 		abort(403)
 
+
 #  Takes in a POST request with a json object containing a SINGLE MAC address
 #  Returns a secret key based on the MAC address and a HTTP Code 201
 #  Stores a copy of secret in the local database
@@ -82,7 +87,6 @@ def initSelf():
 		return jsonify(
 			Secret = secret
 		), status.HTTP_201_CREATED
-
 
 
 #  Takes in a POST request with a json object containing a SINGLE MAC address and a secret key
@@ -131,7 +135,10 @@ def receiveQueryMyMacAddr():
 		strike(None,addrList[0],secret,1)
 		return 'Too many query requests', 429
 	state = queryAddr(addrList)
-	if state == 1:
+	if state == 2:
+		updateRateLimit(addrList[0])
+		return "At risk, but unauthorative", 221 #Custom response code for at-risk unauthorative
+	elif state == 1:
 		updateRateLimit(addrList[0])
 		return "At risk, but unauthorative", 211 #Custom response code for at-risk unauthorative
 	elif state == 0:
@@ -143,7 +150,6 @@ def receiveQueryMyMacAddr():
 		return 'No such user or invalid keys', 403
 	else:
 		return status.HTTP_500_INTERNAL_SERVER_ERROR
-
 
 
 #  Takes in a POST request with a json object containing a SINGLE MAC address and a secret key
@@ -201,7 +207,7 @@ def initNewUser(selfList):
 	time = datetime.datetime.fromisoformat('2011-11-04 00:05:23.283')
 	if not ccm.personExists(addr):
 		secret = hashlib.sha224((addr+str(os.urandom(128))+creds.salt).encode('utf-8')).hexdigest()
-		success = ccm.addPerson(addr,4,secret,time)  # States: 1. Recovered, 2. Positive, 3. Contacted, 4. Neutral
+		success = ccm.addPerson(addr,4,secret,time)  # States: 1. Recovered, 2. Positive, 3. Contacted, 4. Neutral, 5. Confirmed Recovery, 6. Confirmed Positive, 7. Confirmed Contact
 		if not success:
 			raise cloudant.error.CloudantDatabaseException
 	else: #person, exists, but may not be initiated. This only occurs if person contacted a person marked positive
@@ -230,13 +236,21 @@ def verifySecret(addr, secret):
 		return False
 
 
+# States: 1. Recovered, 2. Positive, 3. Contacted, 4. Neutral, 5. Confirmed Recovery, 6. Confirmed Positive, 7. Confirmed Contact
 def markPositive(addrList, self):
+	if ccm.getState(self[0]) == 6:
+		selfState = 6
+		metState = 7
+	else:
+		selfState = 2
+		metState = 3
 	for positive in addrList:
 		if ccm.personExists(positive):  # Change state if person exists
 			# retry the write to the database up to 10 times if it fails
 			attempt = 1
 			while attempt <= 10:
-				success = ccm.changeState(positive,3)
+				if ccm.getState(positive) < metState:
+					success = ccm.changeState(positive,metState)
 				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
@@ -246,7 +260,7 @@ def markPositive(addrList, self):
 			# if person not exist, create an unintiated Person with state
 			attempt = 1
 			while attempt <= 10:
-				success = ccm.addPerson(positive,3,"",datetime.datetime.fromisoformat('2011-11-04 00:05:23.283'))
+				success = ccm.addPerson(positive,metState,"",datetime.datetime.fromisoformat('2011-11-04 00:05:23.283'))
 				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
@@ -258,7 +272,7 @@ def markPositive(addrList, self):
 			# retry the write to the database up to 10 times if it fails
 			attempt = 1
 			while attempt <= 10:
-				success = ccm.changeState(positive,2)
+				success = ccm.changeState(positive,selfState)
 				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
@@ -268,7 +282,7 @@ def markPositive(addrList, self):
 			# if person not exist, create an unintiated Person with state
 			attempt = 1
 			while attempt <= 10:
-				success = ccm.addPerson(positive,2,"",datetime.datetime.fromisoformat('2011-11-04 00:05:23.283'))
+				success = ccm.addPerson(positive,selfState,"",datetime.datetime.fromisoformat('2011-11-04 00:05:23.283'))
 				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
@@ -292,6 +306,8 @@ def queryAddr(addrList):
 	for addr in addrList:
 		if ccm.getState(addr) == 3 or  ccm.getState(addr) == 2:
 			return 1
+		elif ccm.getState(addr) == 6 or  ccm.getState(addr) == 7:
+			return 2
 	return 0
 
 
@@ -392,6 +408,137 @@ def strike(ip,mac,secretKey,strikes):
 			key_ban_list[secretKey] = newEntry
 		else:
 			key_ban_list[secretKey] = strikes
+
+
+@app.route('/hospitalReport',methods=["POST"])
+def medConfirm():
+	data = request.get_json(force=True)
+	if not ('ID' in data and 'Password' in data and 'Positives' in data):
+		return 'Improper Request', 400
+	ID = data['ID']
+	password = data['Password']
+	positives = data['Positives']
+	positives = parseMacAddr(positives)
+	if not positives:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Bad MAC Addresses!', 400
+	valid = verifyHospital(ID,password)
+	if valid:
+		confirmPositive(positives)
+		return jsonify(
+			msg = "Input recorded"
+		), status.HTTP_201_CREATED
+	else:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Incorect Key', 403
+
+
+def verifyHospital(ID,password):
+	safetyCheck = re.compile(r'^([a-z0-9]{56})$')
+	try:
+		safePass = safetyCheck.fullmatch(str(password)).group(1)
+	except AttributeError:
+		return False
+	if not ccm.hospitalExists(ID):
+		return False
+	if not safePass:
+		return False
+	if hashlib.sha224(safePass.encode('utf-8')).hexdigest() == ccm.getHospitalPassword(ID):
+		return True
+	else:
+		return False
+
+
+# States: 1. Recovered, 2. Positive, 3. Contacted, 4. Neutral, 5. Confirmed Recovery, 6. Confirmed Positive, 7. Confirmed Contact
+def confirmPositive(positives):
+	for positive in positives:
+		if ccm.personExists(positive):  # Change state if person exists
+			# retry the write to the database up to 10 times if it fails
+			attempt = 1
+			while attempt <= 10:
+				success = ccm.changeState(positive,6)
+				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
+				if success:
+					break
+				else:
+					attempt = attempt + 1
+		else:
+			# if person not exist, create an unintiated Person with state
+			attempt = 1
+			while attempt <= 10:
+				success = ccm.addPerson(positive,6,"",datetime.datetime.fromisoformat('2011-11-04 00:05:23.283'))
+				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
+				if success:
+					break
+				else:
+					attempt = attempt + 1
+
+
+@app.route('/addHospital',methods=["POST"])
+def addHostpital():
+	data = request.get_json(force=True)
+	if 'ID' not in data or 'AdminPass' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Improper Request', 400
+	ID = data['ID']
+	if data['AdminPass'] != creds.addHospitalPass:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Invalid admin password. ', 403
+	password = initNewHospital(ID)
+	if password == "":
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Already Added. ', 403
+	elif password is None:
+		return status.HTTP_500_INTERNAL_SERVER_ERROR
+	else:
+		return jsonify(
+			Password = password
+		), status.HTTP_201_CREATED
+
+
+def initNewHospital(ID):
+	password = ""
+	if not ccm.hospitalExists(ID):
+		password = hashlib.sha224((ID+str(os.urandom(128))+creds.salt).encode('utf-8')).hexdigest()
+		success = ccm.addHospital(ID,hashlib.sha224(password.encode('utf-8')).hexdigest())  # States: 1. Recovered, 2. Positive, 3. Contacted, 4. Neutral, 5. Confirmed Recovery, 6. Confirmed Positive, 7. Confirmed Contact
+		if not success:
+			raise cloudant.error.CloudantDatabaseException
+	return password
+
+
+@app.route('/revokeHospital',methods=["POST"])
+def revokeHostpital():
+	data = request.get_json(force=True)
+	if 'ID' not in data or 'AdminPass' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Improper Request', 400
+	ID = data['ID']
+	if data['AdminPass'] != creds.rmHospitalPass:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Invalid admin password. ', 403
+	ccm.revokeHospital(ID)
+	return 'Hospital removed', 202
+
+
+@app.route('/maintenance',methods=['POST'])
+def pauseServer():
+	global maintenance
+	data = request.get_json(force=True)
+	if 'AdminPass' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Improper Request', 400
+	if creds.adminAgent not in request.user_agent.string:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return "Permission Denied",403
+	if data['AdminPass'] != creds.adminPass:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Invalid admin password. ', 403
+	if maintenance != True:
+		maintenance = True
+		return 'Maintenance  mode on', 200
+	else:
+		maintenance = False
+		return 'Maintenance mode off', 200
 
 
 @atexit.register
