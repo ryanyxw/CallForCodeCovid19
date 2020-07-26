@@ -45,6 +45,7 @@ WindowManager:
 <HomePage>:
     name: "home"
     statusLabel : status
+    macDisplay: mac
 
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
@@ -60,6 +61,7 @@ WindowManager:
         on_release:
             root.calculateMac()
     ScaleLabel:
+        id: mac
         pos_hint: {"center_x": 0.5, "center_y": 0.6}
         size_hint: 0.7, 0.1
         text: root.actualMac
@@ -69,9 +71,15 @@ WindowManager:
         text: "Your Mac: " + root.selfMacAddress
     ScaleLabel:
         id: status
-        pos_hint: {"center_x": 0.5, "bottom": 0}
+        pos_hint: {"center_x": 0.5, "bottom": 0.3}
         text: root.store.get("homeLabel")["value"]
         size_hint: 1, 0.05
+    Button:
+        pos_hint: {"center_x": 0.5, "center_y": 0.2}
+        size_hint: 0.7, 0.1
+        text: "Test"
+        on_release:
+            root.testFunction()
 
 
 
@@ -80,6 +88,7 @@ WindowManager:
     name: "sidebar"
     GridLayout:
         cols: 1
+
 
         ScaleButton:
             text: "Home"
@@ -198,7 +207,16 @@ WindowManager:
 
 <SeeDataPage>:
     name: "seedata"
-
+    displayTen: display
+    ScaleLabel:
+        pos_hint: {"center_x": 0.5, "center_y": 0.9}
+        size_hint: 0.7, 0.12
+        text: "Recent Ten Mac Addresses Recorded"
+    ScaleLabel:
+        id: display
+        pos_hint: {"center_x": 0.5, "center_y": 0.45}
+        size_hint: 0.7, 0.8
+        text: root.convertRecentTenToStr()
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
         size_hint: 0.2, 0.05

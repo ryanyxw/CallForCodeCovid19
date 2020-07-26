@@ -10,7 +10,8 @@ from kivy.utils import platform
 from kivy.logger import Logger
 from kivy.logger import LoggerHistory
 from kivy.clock import Clock
-import kivy.config
+from kivy.config import Config
+
 #Changes the window size
 from kivy.core.window import Window
 import kivy.metrics
@@ -24,15 +25,14 @@ import sys
 #Regular Expressions
 import re
 #Client
-import client
+import client_experimental as client
 #network interfaces
 import netifaces
-#WHen return from server, remember type
-#os.platform used to identify the os
-#Client secret key
-#Guiunicorn
 #Using a for loop to continue requests if the request failed
 #Status bar change color if there is an error
+
+
+#Make sure to make selfMac a csv string of mac addressses
 this = sys.modules[__name__]
 if platform != 'android':
     if os.path.isdir(Path.home()):
@@ -43,28 +43,31 @@ if platform != 'android':
         raise OSError
 else:
     this.appPath = os.path.dirname(__file__)
-
-this.logVerbosity = 50
+this.versionNumber = '1.0.0'
+this.logVerbosity = 20
 this.storeName = 'local'
-
-kivy.config.log_dir = this.appPath
+this.deleteAllData = False
 if this.logVerbosity < 10:
-    kivy.config.log_level = "trace"
+    this.log_level = "trace"
 elif this.logVerbosity < 20:
-    kivy.config.log_level = "debug"
+    this.log_level = "debug"
 elif this.logVerbosity < 30:
-    kivy.config.log_level = "info"
+    this.log_level = "info"
 elif this.logVerbosity < 40:
-    kivy.config.log_level = "warn"
+    this.log_level = "warn"
 elif this.logVerbosity < 50:
-    kivy.config.log_level = "error"
+    this.log_level = "error"
 elif this.logVerbosity == 50:
-    kivy.log_level = "critical"
+    this.log_level = "critical"
 else:
     kivy.config.log_level = "trace"
-kivy.config.log_name = "MainGUI_%y-%m-%d_%_.txt"
-kivy.config.log_maxfiles = 49
 
+
+Config.set('kivy', 'log_level', this.log_level)
+Config.set('kivy', 'log_dir', this.appPath)
+Config.set('kivy', 'log_name', "CovidContactTracerGUI_%y-%m-%d_%_.log")
+Config.set('kivy', 'log_maxfiles', 49)
+Config.write()
 #Manages all permanent storage and adding into the JSON file
 this.store = JsonStore(this.appPath + os.sep + this.storeName + '.json')
 
@@ -77,13 +80,32 @@ class storageUnit():
     def addEntry(self, macAddress, time):
         if macAddress in this.store.get("macDict")["value"]:
             #this.store.get("macDict")["value"][macAddress] += [time]#HEREEEee
-            this.store.get("macDict")["value"][macAddress] += ["TEST"]#HEREEE
-            this.store.get("recentTen")["value"] = [[time, macAddress]] + this.store.get("recentTen")["value"][:9]
+            tempNewMacDict = this.store.get("macDict")["value"]
+            tempNewMacDict[macAddress] = time
+            this.store.put("macDict", value = tempNewMacDict)
+            tempNewMacDict = 0
+
+            tempNewRecentTen = this.store.get("recentTen")["value"]
+            tempNewRecentTen = [[time, macAddress]] + tempNewRecentTen[:9]
+            this.store.put("recentTen", value = tempNewRecentTen)
+            tempNewRecentTen = 0
             Logger.info('addEntry updated ' + macAddress + ' met at '+time)
         else:
-            this.store.get("numEntries")["value"] += 1
-            this.store.get("macDict")["value"][macAddress] = [time]
-            this.store.get("recentTen")["value"] = [[time, macAddress]] + this.store.get("recentTen")["value"][:9]
+            tempNewNumEntries = this.store.get("numEntries")["value"]
+            tempNewNumEntries += 1
+            this.store.put("numEntries", value = tempNewNumEntries)
+            tempNewNumEntries = 0
+
+            tempNewMacDict = this.store.get("macDict")["value"]
+            tempNewMacDict[macAddress] = time
+            this.store.put("macDict", value = tempNewMacDict)
+            tempNewMacDict = 0
+
+            tempNewRecentTen = this.store.get("recentTen")["value"]
+            tempNewRecentTen = [[time, macAddress]] + tempNewRecentTen[:9]
+            this.store.put("recentTen", value = tempNewRecentTen)
+            tempNewRecentTen = 0
+
             Logger.info('addEntry added ' + macAddress + ' met at '+time)
 #Checks if the previous prevNetwork is the same as foreignSet, which is a set
     def isSamePrevNetwork(self, foreignSet):
@@ -101,15 +123,8 @@ class GetMacAdd():
         self.storage = storageUnit()
 
         self.supported = None  #  Documents whether our mac address collection method is supported
-
-
         Logger.info('creating an instance of GetMacAdd')
 
-
-    def pressed(self, instance):
-        macList = self.getMac()
-        self.label3.text = "SelfMac : " + macList
-        Logger.info('Button pressed')
 
     def getString(self, recentTen):
         returnStr = ""
@@ -118,6 +133,7 @@ class GetMacAdd():
         Logger.info('getString returned ' + repr(returnStr) + ' from input ' + repr(recentTen))
         return returnStr
 
+#Gets my own self mac address
     def getMacSelf(self):
         selfMac = []
         isContractionStart = re.compile(r'^([\da-fA-F]):')
@@ -151,33 +167,77 @@ class GetMacAdd():
             Logger.info('getMacSelf returned ' + str(selfMac))
             return selfMac
 
+#Attempts to arp the mac address. If not, logger records a critical message
     def tryGetMac(self):
-
+        Logger.debug("We have entered tryGetMac")
         fails = 0
         if os.path.isfile(os.sep+"proc"+os.sep+"net"+os.sep+"arp"):
             if os.access(os.sep+"proc"+os.sep+"net"+os.sep+"arp", os.R_OK):
                 f=open(os.sep+"proc"+os.sep+"net"+os.sep+"arp", "r")
                 result = f.read()
                 self.supported = True  #  Documents whether our mac address collection method is supported
-                Logger.debug('tryGetMac: read proc/net/arp successfully and got ' + result)
+                Logger.info('tryGetMac: read proc/net/arp successfully and got ' + result)
                 return result
             else:
+                Logger.warning("read /proc/net/arp failed")
                 fails = fails + 1
         else:
             fails = fails + 1
+            Logger.warning("read /proc/net/arp failed")
         try:
             result = subprocess.run(['arp', '-a'], stdout=subprocess.PIPE)
             self.supported = True #  Documents whether our mac address collection method is supported
-            Logger.debug('tryGetMac: executed arp -a successfully and got ' + repr(result))
+            Logger.info('tryGetMac: executed arp -a successfully and got ' + repr(result))
             return result
         except subprocess.CalledProcessError:
             fails = fails + 1
+            Logger.warning("arp -a failed")
             pass
         self.supported = False #  Documents whether our mac address collection method is supported
-        Logger.debug('tryGetMac: all MAC address scanning methods failed')
+        Logger.critical('tryGetMac: all MAC address scanning methods failed')
         return ""
 
+#Gets the mac address. Returns the previous (current) network mac address
     def getMac(self):
+        macInitStr = self.tryGetMac()
+        Logger.debug("We have entered getMac")
+        macInitStr = repr(macInitStr)
+        Logger.debug('getMac: recieved ' + macInitStr)
+        isMacAddr = re.compile(r"([\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2})")
+        shortMacList = re.findall(isMacAddr,macInitStr)
+        isContractionStart = re.compile(r'^([\da-fA-F]):')
+        isContractionMid = re.compile(r':([\da-fA-F]):')
+        isContractionEnd = re.compile(r':([\da-fA-F])$')
+        macList = []
+        for mac in shortMacList:
+            if re.search(isContractionStart,mac) is not None:
+                digit = re.search(isContractionStart,mac).group(1)
+                mac = re.sub(isContractionStart,digit + "0:",mac)
+            if re.search(isContractionEnd,mac) is not None:
+                digit = re.search(isContractionEnd,mac).group(1)
+                mac = re.sub(isContractionEnd,":" + digit + "0",mac)
+            while re.search(isContractionMid,mac) is not None:
+                digit = re.search(isContractionMid,mac).group(1)
+                mac = re.sub(isContractionMid,":" + digit + "0:",mac)
+            macList.append(mac)
+
+        Logger.debug('getMac: filtered into ' + repr(macList))
+
+#macList is the list of mac addresses that was returned by the arp-a
+        compareSet = set(macList)
+        diffArr = self.storage.isSamePrevNetwork(compareSet)
+        if len(diffArr) == 0:
+            Logger.debug('getMac: No new MAC Addr found')
+            return self.getString(this.store.get("prevNetwork")["value"])
+        else:
+#Appends on a new mac address if it does not exist
+            for macAdd in diffArr:
+                self.storage.addEntry(macAdd, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
+            this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
+            return self.getString(this.store.get("prevNetwork")["value"])
+
+#A method used for testing. Same as getMac, but adds on a new mac to test
+    def testGetMac(self):
         macInitStr = self.tryGetMac()
         macInitStr = repr(macInitStr)
         Logger.debug('getMac: recieved ' + macInitStr)
@@ -200,6 +260,7 @@ class GetMacAdd():
             macList.append(mac)
 
         Logger.debug('getMac: filtered into ' + repr(macList))
+        macList += ["44:44:44:44:44:44"]
         compareSet = set(macList)
         diffArr = self.storage.isSamePrevNetwork(compareSet)
         if len(diffArr) == 0:
@@ -207,7 +268,8 @@ class GetMacAdd():
             return self.getString(this.store.get("recentTen")["value"])
         else:
             for macAdd in diffArr:
-                self.storage.addEntry(macAdd, str(datetime.datetime.now()))
+                print("TRUE == " + repr(macAdd))
+                self.storage.addEntry(macAdd, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
             return self.getString(this.store.get("recentTen")["value"])
 
@@ -217,10 +279,12 @@ class HomePage(Screen, Widget):
     def __init__(self, **kwargs):
         super(HomePage, self).__init__(**kwargs)
 
-        #DELETE IN THE END ONLYU USED TO DEBUG
+        #Store for all the permanent storage
         self.store = this.store
+        #variable used to reference the getMac class
         self.macClass = GetMacAdd()
-        self.selfMacAddress = str(self.macClass.getMacSelf()[0])
+        #Variable used to record your own personal macAddress
+        self.selfMacAddress = self.macClass.getMacSelf()[0]
         Logger.info('creating an instance of HomePage')
 #Determines if the server initiation is correct (should only be a one time thing)
         isSuccessful = True
@@ -228,28 +292,40 @@ class HomePage(Screen, Widget):
         if not os.path.isfile(this.appPath + os.sep + "client.log"):
             f = open(this.appPath + os.sep + "client.log", "w")
             f.close()
-        client.init(this.appPath + os.sep + "client.log", this.logVerbosity)
+        client.init(this.appPath, this.logVerbosity)
         #self.macClass = GetMacAdd()
 #Checks if there is a file. If there is not, initiate all 4 necessary parts
+
+        #Variable that stores what the status is for the user. This is just initialization
         self.statusLabel = ObjectProperty(None)
+        #Variable that stores what the mac addresses are printed on. This is just initialization
+        self.macDisplay = ObjectProperty(None)
         print("isExist before = " + repr(this.store.exists('numEntries')))
+#If this is a new user
         if (not this.store.exists('numEntries')):
+            #First initiates everything within the json file
+            this.store.put("numEntries", value = 0)
+            this.store.put("macDict", value = dict())
+            this.store.put("recentTen", value = list())
+            this.store.put("prevNetwork", value = dict())
+#                self.statusLabel.text = "Status: Account Registered"
+            this.store.put("homeLabel", value = "Status: Account Registered")
+            this.store.put("quitAppLabel", value = "Status: Click to delete all data")
+            this.store.put("sendDataLabel", value = "Status: Click to report infected")
+            #Sets the secretCode to be empty screen
+            Logger.info('Secret Key set to ' + 'empty string')
+            this.store.put("secretKey", value = '')
             #this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
             Logger.info('Self Mac Address set to ' + self.macClass.getMacSelf()[0])
+            #Stores the personal mac address in the JSOn file
             this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
+            #Stores the returned secret key in tempSecret
             tempSecret = client.initSelf(this.store.get("selfMac")["value"])
             if type(tempSecret) == str:
                 if (len(tempSecret) == 56):
+                    #All initialization
                     Logger.info('Secret Key set to ' + tempSecret)
                     this.store.put("secretKey", value = tempSecret)
-                    this.store.put("numEntries", value = 0)
-                    this.store.put("macDict", value = dict())
-                    this.store.put("recentTen", value = list())
-                    this.store.put("prevNetwork", value = dict())
-#                self.statusLabel.text = "Status: Account Registered"
-                    this.store.put("homeLabel", value = "Status: Account Registered")
-                    this.store.put("quitAppLabel", value = "Status: Click to delete all data")
-                    this.store.put("sendDataLabel", value = "Status: Click to report infected")
             elif (tempSecret == 2):
                 this.store.put("homeLabel", value = "Status: Server Error, Please quit the app and try again (2)")
                 isSuccessful = False
@@ -262,19 +338,34 @@ class HomePage(Screen, Widget):
             else:
                 this.store.put("homeLabel", value = "Status: Unknown error occurred. Please restart the app. If this persists, please contact developers. ")
                 isSuccessful = False
-
         if (isSuccessful):
-            self.options = ObjectProperty(None)
 #macClass variable is just used as a reference to be able to call the getMac class
-            self.macClass = GetMacAdd()
-            self.selfMacAddress = str(self.macClass.getMacSelf()[0]) #Assumes the first mac address is self mac address
+            #Stores self mac address in selfMacAddress
+            self.selfMacAddress = self.store.get("selfMac")["value"] #Assumes the first mac address is self mac address
+            #Stores the actual mac addresses that we get from getMac into actualMac. This is used to display the network mac addresses the first time users
+            #Open the app
             self.actualMac = self.macClass.getMac()
+            #self.actualmac = self.calculateMac()
+            cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
+            macDict = this.store.get("macDict")["value"]
+            for mac in macDict.keys():
+                strTime = macDict[mac]
+                dateSeen = datetime.datetime.strptime(strTime, '%Y-%m-%d_%H:%M:%S')
+                if dateSeen < cutoff:
+                    del macDict[mac]
+            this.store.put("macDict", value = macDict)
+            del macDict
+        else:
+            #This should at least guarantee the gui to run but set everything to empty.
+            self.selfMacAddress = ""
+            self.actualMac = ""
 
     #The line of code that calls the function runTimeFunction every 0.5 seconds
-        Clock.schedule_interval(self.runTimeFunction, 0.5)
+        Clock.schedule_interval(self.runTimeFunction, 10)
 
     def runTimeFunction(self, deltaT):
-        print("hello")
+        pass
+
 
     def coronaCatcherButtonClicked(self):
         Logger.info('coronaCatcherButtonClicked ')
@@ -284,54 +375,56 @@ class HomePage(Screen, Widget):
         else:
             lastAccess = datetime.datetime.fromisoformat('2011-11-04 00:05:23.283')
         allowedTime = lastAccess + datetime.timedelta(hours=8)
+        currentTime = datetime.datetime.now()
         if allowedTime < currentTime:
             returnVal = client.queryMyMacAddr(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
             now = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S.%f')
             this.store.put("LastQueryTime", value = now)
             if (returnVal == -1):
-                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", you have contacted someone with the virus. Please quarantine")
+                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou have contacted someone with the virus. Please quarantine"
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou have contacted someone with the virus. Please quarantine")
             elif (returnVal == 0):
-                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", you are still safe!")
+                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou are still safe!"
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou are still safe!")
             elif (returnVal == 2):
-                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Server Error, please quit the app and retry (2)")
+                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error, please quit the app and retry (2)"
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error, please quit the app and retry (2)")
             elif (returnVal == 3):
-                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect secret key, you're kinda screwed (3)"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Incorrect secret key, you're kinda screwed (3)")
+                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, you're kinda screwed (3)"
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, you're kinda screwed (3)")
             elif (returnVal == 4):
-                self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid mac address, you're kinda screwed (4)"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Invalid mac address, you're kinda screwed (4)")
+                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, you're kinda screwed (4)"
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, you're kinda screwed (4)")
             elif (returnVal == 5):
                 self.statusLabel.text = "Please only check once every 8 hours."
                 this.store.put("homeLabel", value = "Please only check once every 8 hours.")
             else:
                 self.statusLabel.text = "1 returned"
-                this.store.put("homeLabel", value = "Checked by " + str(datetime.datetime.now()) + ", 1 returned")
+                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 returned")
         else:
-            self.statusLabel.text = "Last checked at " + lastAccess + ", please only check once every 8 hours. Feel free to return at " + allowedTime
-            this.store.put("homeLabel", value = "Last checked at " + lastAccess + ", please only check once every 8 hours. Feel free to return at " + allowedTime)
+            self.statusLabel.text = "Please only check once every 8 hours. Feel free \nto return at " + str(allowedTime)
+            this.store.put("homeLabel", value = "Please only check once every 8 hours. Feel free \nto return at " + str(allowedTime))
 
-
-
-#This method is used when we click the button to check our current network mac
-    def calculateMac(self):
-        self.actualMac = self.macClass.getMac()
-        self.coronaCatcherButtonClicked()
-        Logger.info('Calculated MAC Addr to be ' + self.actualMac)
+    #This test function is used to mimic adding a new mac to the batch
+    def testFunction(self): #Delete kivy line 75 - 79
+        #actualMac is the variable that stores the current network after arp-a again
+        self.actualMac = self.macClass.testGetMac()
+        #This changes the displayed text into the current network by formatting it with the getString method in the macClass
+        self.macDisplay.text = self.macClass.getString(self.store.get("prevNetwork")["value"])
         return self.actualMac
 
-    #This calculates the offset accordingly (topLeftH and topLeftW are both in terms of proportions)
-    def findCoordinates(self, percentage, topLeftWidth, topLeftHeight):
-        smallDim = min(Window.size)
-        offSet = smallDim * percentage
-        xCoor = topLeftWidth * Window.size[1] + offSet#Windows: (Height, Width)
-        yCoor = topLeftHeight * Window.size[0] - self.options.size[0] - offSet
-        Logger.info('findCoordinates returned X:' + repr(xCoor / Window.size[1]) + ' and Y:'+repr(yCoor / Window.size[0]))
-        return (xCoor / Window.size[1], yCoor / Window.size[0])
+#This method is used when we click the button to check our current network mac and confirm with the server
+    def calculateMac(self):
+        #actualMac is the variable that stores the current network after arp-a again
+        self.actualMac = self.macClass.getMac()
+        #This line checks with the server to see if user has already contacted infected individual
+        self.coronaCatcherButtonClicked()
+        Logger.info('Calculated MAC Addr to be ' + self.actualMac)
+        Logger.info(self.macClass.getString(self.store.get("prevNetwork")["value"]))
+        #This changes the displayed text into the current network by formatting it with the getString method in the macClass
+        self.macDisplay.text = self.macClass.getString(self.store.get("prevNetwork")["value"])
+        return self.actualMac
 
-    pass
 
 #SideBar class page (reference my.kv file)
 class SideBarPage(Screen):
@@ -350,30 +443,30 @@ class QuitAppPage(Screen):
 
         self.statusLabel = ObjectProperty(None)
 
-
     def deleteDataAndQuitButtonClicked(self):
         Logger.info('Delete data and quit clicked')
         returnValue = client.forgetUser(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnValue == 0):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Sucess! You may quit the app"
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Sucess! You may quit the app")
+            this.deleteAllData = True
+            Logger.info('Marked local files for deletion')
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nSucess! You may quit the app"
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nSucess! You may quit the app")
         elif (returnValue == 2):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Server Error (2)"
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Server Error (2)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error (2)"
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error (2)")
         elif (returnValue == 3):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", incorrect secret key (3)"
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", incorrect secret key (3)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nincorrect secret key (3)"
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nincorrect secret key (3)")
         elif (returnValue == 4):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", invalid mac addr of self (4)"
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", invalid mac addr of self (4)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \ninvalid mac addr of self (4)"
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \ninvalid mac addr of self (4)")
         elif (returnValue == 1):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", 1 is returned (1)"
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", 1 is returned (1)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 is returned (1)"
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 is returned (1)")
         else:
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", server returned unknown command : " + str(returnValue)
-            this.store.put("quitAppLabel", value = "Checked by " + str(datetime.datetime.now()) + ", server returned unknown command : " + str(returnValue))
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nserver returned unknown command : " + str(returnValue)
+            this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nserver returned unknown command : " + str(returnValue))
 
-    pass
 
 #SendData class page (reference my.kv file)
 class SendDataPage(Screen):
@@ -395,34 +488,34 @@ class SendDataPage(Screen):
 
         returnVal = client.positiveReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"], self.getCSVString())
         if (returnVal == 2):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)")
         elif (returnVal == 3):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)")
         elif (returnVal == 4):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid CSV. Restart app and contact admin"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Invalid CSV. Restart app and contact admin")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid CSV. Restart app and contact admin"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid CSV. Restart app and contact admin")
         else:
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Get well soon!"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Get well soon!")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Get well soon!"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Get well soon!")
 
     def iJustRecoveredButtonClicked(self):
         Logger.info('iJustRecovered button clicked')
 
         returnVal = client.negativeReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
         if (returnVal == 2):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Retry is needed(server error). Restart app and try again (2)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)")
         elif (returnVal == 3):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Incorrect Secret Key. Restart app and try again (3)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)")
         elif (returnVal == 4):
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Invalid MAC Address of self. Restart app and contact admin (4)"
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Invalid MAC Address of self. Restart app and contact admin (4)")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid MAC Address of self. Restart app and contact admin (4)"
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid MAC Address of self. Restart app and contact admin (4)")
         else:
-            self.statusLabel.text = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Good job recovering! "
-            this.store.put("sendDataLabel", value = "Checked by " + str(datetime.datetime.now()) + ", Request sucess! Good job recovering! ")
+            self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Good job recovering! "
+            this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Good job recovering! ")
 
     pass
 
@@ -432,32 +525,34 @@ class SeeDataPage(Screen):
         super(SeeDataPage, self).__init__(**kwargs)
         Logger.info('creating an instance of SeeDataPage')
         self.store = this.store
-#Used for future reference and changing the data in the table
-        self.data = [0] * 20
-#Stores the recentTen aspect of the json file
+
+#Stores the recentTen aspect of the json file, used for the first initiation of the user
         self.recentTen = this.store.get("recentTen")["value"]
-#Creates the grid used to display the information
-        self.table = GridLayout()
-        self.table.cols = 2
+
+        #This variable references the label within the page (used for potentially changing the top10 by renewing)
+        self.displayTen = ObjectProperty(None)
+
 
         Logger.info("BEFORE ASSIGN VALUES")
-#Initiates the table by first creating a label into the self.data array, and
-#then adding them to the grid
-        for i in range(len(self.recentTen)):
-            self.data[2 * i] = Label(text = self.recentTen[i][1])
-            self.data[2 * i + 1] = Label(text = self.recentTen[i][0])
-            self.table.add_widget(self.data[2 * i])
-            self.table.add_widget(self.data[2 * i + 1])
-        self.add_widget(self.table)
+
 
 #This method changes the self.data so that it reflects the new recentTen
     def renewRecentTen(self):
         Logger.info('Renew Recent Ten button clicked')
         self.recentTen = this.store.get("recentTen")["value"]
-        for i in range(len(self.recentTen)):
-            self.data[2 * i].text = self.recentTen[i][1]
-            self.data[2 * i + 1].text = self.recentTen[i][0]
-    pass
+        self.displayTen.text = self.convertRecentTenToStr()
+
+
+    def convertRecentTenToStr(self):
+        returnStr = ""
+        for pair in self.recentTen:
+            returnStr += "Time: " + pair[0] + " - Mac: " + pair[1] + "\n\n\n"
+        return returnStr
+
+
+
+
+
 
 #Represent the transitions between the windows above
 class WindowManager(ScreenManager):
@@ -486,6 +581,11 @@ if __name__ == "__main__":
         for log in LoggerHistory.history:
             f.write(repr(log) +'\n')
         f.close()
+        if this.deleteAllData:
+            for entry in os.scandir(this.appPath):
+                if (not entry.path.endswith(".py") and not entry.path.endswith(".kv")) and entry.is_file():
+                    os.remove(entry.path)
+            Logger.info('Deleted local storage')
         exit()
     except KeyboardInterrupt:
         Logger.critical('App Exiting')
@@ -494,6 +594,11 @@ if __name__ == "__main__":
             f.write(repr(log) +'\n')
         f.close()
         client.freeResources()
+        if this.deleteAllData:
+            for entry in os.scandir(this.appPath):
+                if (not entry.path.endswith(".py") and not entry.path.endswith(".kv")) and entry.is_file():
+                    os.remove(entry.path)
+            Logger.info('Deleted local storage')
         exit()
     except Exception as e:
         Logger.critical("Exception occurred", exc_info=True)

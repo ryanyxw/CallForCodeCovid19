@@ -1,29 +1,43 @@
-import pycurl
+from kivy.network.urlrequest import UrlRequest
+from kivy.logger import Logger
+from kivy.logger import LoggerHistory
 import sys
 import json
 import re
-
-from io import BytesIO
-
-import logging
-import logging.handlers
 import os
+from kivy.config import Config
 
 this = sys.modules[__name__]
 
-
-def init(logFile,verbosityLevel):
-    if not os.path.isfile(logFile):
+def init(logDir,verbosityLevel):
+    this.__code__ = None
+    this.__body__ = None
+    this.__header__ = headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain", "User-Agent": "COVIDContactTracerApp/1.0"}
+    this.__baseURL__ = "https://covidcontacttracer.ngrok.io/"
+    this.logVerbosity = verbosityLevel
+    if this.logVerbosity < 10:
+        this.log_level = "trace"
+    elif this.logVerbosity < 20:
+        this.log_level = "debug"
+    elif this.logVerbosity < 30:
+        this.log_level = "info"
+    elif this.logVerbosity < 40:
+        this.log_level = "warn"
+    elif this.logVerbosity < 50:
+        this.log_level = "error"
+    elif this.logVerbosity == 50:
+        this.log_level = "critical"
+    else:
+        kivy.config.log_level = "trace"
+    if os.path.isdir(logDir):
+        Config.set('kivy', 'log_level', this.log_level)
+        Config.set('kivy', 'log_dir', logDir)
+        Config.set('kivy', 'log_name', "CovidContactTracerClient_%y-%m-%d_%_.log")
+        Config.set('kivy', 'log_maxfiles', 49)
+        Config.write()
+        return True
+    else:
         return False
-    this.__buffer_obj__ = BytesIO()
-    #this.__baseURL__ = 'https://covidcontacttracerapp-smart-zebra-ua.mybluemix.net/'
-    this.__baseURL__ = 'https://covidcontacttracer.ngrok.io/'
-    this.__curlHandle__ = pycurl.Curl()
-    this.__logger__ = logging.getLogger(__name__)
-    rotHandle = logging.handlers.RotatingFileHandler(logFile, maxBytes=10485760, backupCount=10)
-    rotHandle.setLevel(verbosityLevel)
-    this.__logger__.addHandler(rotHandle)
-    return True
 
 
 
@@ -33,49 +47,47 @@ def init(logFile,verbosityLevel):
 #  ERROR: returns 2 when a retry is needed (server error) and a 3 if the user is already initiated, return 4 for invalid MAC Address
 #  CATCH-ALL: Returns a 1 for other errors.
 def initSelf(MacAddrSelf):
-    c = this.__curlHandle__
-    c.setopt(c.URL, this.__baseURL__+'InitSelf')
     d = {}
-    d['Self'] = MacAddrSelf
+    d["Self"] = MacAddrSelf
     # Form data must be provided already urlencoded.
     postfields = json.dumps(d)
     # Sets request method to POST,
     # Content-Type header to application/x-www-form-urlencoded
     # and data to send in request body.
-    this.__logger__.debug("initSelf:postfields=" + postfields)
-    c.setopt(c.POSTFIELDS, postfields)
-    c.setopt(c.WRITEFUNCTION, this.__buffer_obj__.write)
-    c.setopt(pycurl.USERAGENT, 'COVIDContactTracerApp/1.0')
-    c.perform()
+    Logger.info("initSelf:postfields=" + postfields)
+    httpReq(this.__baseURL__+"InitSelf",postfields,this.__header__,60,"POST")
+    code = this.__code__
+    if type(code) is not int:
+        Logger.error("initSelf:Unknown Error: No response")
+        return 2
+    body = repr(this.__body__)
 
-    code = c.getinfo(pycurl.HTTP_CODE)
-    body = this.__buffer_obj__.getvalue().decode('utf-8')
-    resetResources()
-    this.__logger__.info("initSelf: Code = " + str(code) + " Msg: " + body)
+    Logger.info("initSelf: Code = " + str(code) + " Msg: " + body)
     if "Initiated." not in body and code == 201:
         try:
             secretPattern = re.compile(r'(\S{56})')
-            jdata = json.loads(body)
-            secret = jdata['Secret']
+
+            jdata = json.loads(body.replace("\'", "\""))
+            secret = jdata["Secret"]
             secret = secretPattern.match(secret).group(1)  # sanitization
         except KeyError:
             return 1
     if code == 201:
-        this.__logger__.debug("initSelf: Recieved key:"+secret+" extracted from: "+body)
+        Logger.debug("initSelf: Recieved key:"+secret+" extracted from: "+body)
         return secret
     elif code >= 500:
         #  Retry
-        this.__logger__.warning("initSelf:Server Error: " + str(code) + " msg: " + body)
+        Logger.warning("initSelf:Server Error: " + str(code) + " msg: " + body)
         return 2
     elif code == 400:
-        this.__logger__.warning("initSelf:400 Error:msg: " + body)
+        Logger.warning("initSelf:400 Error:msg: " + body)
         return 4
     elif code == 403:
-        this.__logger__.warning("initSelf:403 Error:msg: " + body)
+        Logger.warning("initSelf:403 Error:msg: " + body)
         return 3  # Permission denied due to initiated
     else:
         #  Unknown Error
-        this.__logger__.error("initSelf:Unknown Error: " + str(code) + " msg: " + body)
+        Logger.error("initSelf:Unknown Error: " + str(code) + " msg: " + body)
         return 1
 
 
@@ -85,8 +97,6 @@ def initSelf(MacAddrSelf):
 #  ERROR: returns 2 when a retry is needed (server error), return 3 for incorrect secret key, return 4 for empty/invalid CSV contacted list.
 #  CATCH-ALL: Returns a 1 for other errors.
 def positiveReport(MacAddrSelf,secretKey,metAddrList):
-    c = this.__curlHandle__
-    c.setopt(c.URL, this.__baseURL__+'positiveReport')
     d = {}
     d['Self'] = MacAddrSelf
     d['MetAddrList'] = metAddrList
@@ -96,33 +106,31 @@ def positiveReport(MacAddrSelf,secretKey,metAddrList):
     # Sets request method to POST,
     # Content-Type header to application/x-www-form-urlencoded
     # and data to send in request body.
-    this.__logger__.info("positiveReport:postfields="+postfields)
-    c.setopt(c.POSTFIELDS, postfields)
-    c.setopt(c.WRITEFUNCTION, this.__buffer_obj__.write)
-    c.setopt(pycurl.USERAGENT, 'COVIDContactTracerApp/1.0')
-    c.perform()
+    Logger.info("positiveReport:postfields="+postfields)
+    httpReq(this.__baseURL__+'positiveReport',postfields,this.__header__,300,'POST')
+    code = this.__code__
+    if type(code) is not int:
+        Logger.error("positiveReport:Unknown Error: No response")
+        return 2
+    body = repr(this.__body__)
 
-    code = c.getinfo(pycurl.HTTP_CODE)
-    body = str(this.__buffer_obj__.getvalue())
-
-    resetResources()
 
     if code == 201 and "Get well soon. " in body:
         #  Server Ack Success
         return 0
     elif code >= 500:
         #  Retry
-        this.__logger__.warning("positiveReport:Server Error: " + str(code) + " msg: " + body)
+        Logger.warning("positiveReport:Server Error: " + str(code) + " msg: " + body)
         return 2
     elif code == 400:
-        this.__logger__.warning("positiveReport:400 Error:msg: " + body)
+        Logger.warning("positiveReport:400 Error:msg: " + body)
         return 4
     elif code == 403:
-        this.__logger__.warning("positiveReport:403 Error:msg: " + body)
+        Logger.warning("positiveReport:403 Error:msg: " + body)
         return 3  # Permission denied due to initiated
     else:
         #  Unknown Error
-        this.__logger__.error("positiveReport:Unknown Error: " + str(code) + " msg: " + body)
+        Logger.error("positiveReport:Unknown Error: " + str(code) + " msg: " + body)
         return 1
 
 
@@ -132,8 +140,6 @@ def positiveReport(MacAddrSelf,secretKey,metAddrList):
 #  ERROR: returns 2 when a retry is needed (server error), return 3 for incorrect secret key, return 4 for empty/invalid MAC addr of self.
 #  CATCH-ALL: Returns a 1 for other errors.
 def negativeReport(MacAddrSelf,secretKey):
-    c = this.__curlHandle__
-    c.setopt(c.URL, this.__baseURL__+'negativeReport')
     d = {}
     d['Self'] = MacAddrSelf
     d['Secret'] = secretKey
@@ -142,33 +148,31 @@ def negativeReport(MacAddrSelf,secretKey):
     # Sets request method to POST,
     # Content-Type header to application/x-www-form-urlencoded
     # and data to send in request body.
-    this.__logger__.info("negativeReport:postfields="+postfields)
-    c.setopt(c.POSTFIELDS, postfields)
-    c.setopt(c.WRITEFUNCTION, this.__buffer_obj__.write)
-    c.setopt(pycurl.USERAGENT, 'COVIDContactTracerApp/1.0')
-    c.perform()
+    Logger.info("negativeReport:postfields="+postfields)
+    httpReq(this.__baseURL__+'negativeReport',postfields,this.__header__,30,'POST')
+    code = this.__code__
+    if type(code) is not int:
+        Logger.error("negativeReport:Unknown Error: No response")
+        return 2
+    body = repr(this.__body__)
 
-    code = c.getinfo(pycurl.HTTP_CODE)
-    body = str(this.__buffer_obj__.getvalue())
-
-    resetResources()
 
     if code == 201 and "Stay healthy." in body:
         #  Server Ack Success
         return 0
     elif code >= 500:
         #  Retry
-        this.__logger__.warning("negativeReport:Server Error: " + str(code) + " msg: " + body)
+        Logger.warning("negativeReport:Server Error: " + str(code) + " msg: " + body)
         return 2
     elif code == 400:
-        this.__logger__.warning("negativeReport:400 Error:msg: " + body)
+        Logger.warning("negativeReport:400 Error:msg: " + body)
         return 4
     elif code == 403:
-        this.__logger__.warning("negativeReport:403 Error:msg: " + body)
+        Logger.warning("negativeReport:403 Error:msg: " + body)
         return 3  # Permission denied due to initiated
     else:
         #  Unknown Error
-        this.__logger__.error("negativeReport:Unknown Error: " + str(code) + " msg: " + body)
+        Logger.error("negativeReport:Unknown Error: " + str(code) + " msg: " + body)
         return 1
 
 
@@ -179,8 +183,6 @@ def negativeReport(MacAddrSelf,secretKey):
 #  ERROR: returns 2 when a retry is needed (server error), return 3 for incorrect secret key, return 4 for empty/invalid MAC addr of self, return 5 if more than 1 request in 8 hours
 #  CATCH-ALL: Returns a 1 for other errors.
 def queryMyMacAddr(self,secret):
-    c = this.__curlHandle__
-    c.setopt(c.URL, this.__baseURL__+'QueryMyMacAddr')
     d = {}
     d['Self'] = self
     d['Secret'] = secret
@@ -189,39 +191,36 @@ def queryMyMacAddr(self,secret):
     # Sets request method to POST,
     # Content-Type header to application/x-www-form-urlencoded
     # and data to send in request body.
-    this.__logger__.debug("QueryMyMacAddr:postfields="+postfields)
-    c.setopt(c.POSTFIELDS, postfields)
-    c.setopt(c.WRITEFUNCTION, this.__buffer_obj__.write)
-    c.setopt(pycurl.USERAGENT, 'COVIDContactTracerApp/1.0')
-    c.perform()
+    Logger.debug("QueryMyMacAddr:postfields="+postfields)
+    httpReq(this.__baseURL__+'QueryMyMacAddr',postfields,this.__header__,30,'POST')
+    code = this.__code__
+    if type(code) is not int:
+        Logger.error("QueryMyMacAddr:Unknown Error: No response")
+        return 2
+    body = repr(this.__body__)
 
-    code = c.getinfo(pycurl.HTTP_CODE)
-    body = str(this.__buffer_obj__.getvalue())
-
-    resetResources()
-
-    if code == 200 and '{"atRisk":true}' in body:
+    if code == 211:
         #  Contacted Positive MAC Addr
         return -1
-    elif code == 200 and '{"atRisk":false}' in body:
+    elif code == 200:
         #  No Match
         return 0
     elif code >= 500:
         #  Retry
-        this.__logger__.warning("queryMyMacAddr:Server Error: " + str(code) + " msg: " + body)
+        Logger.warning("queryMyMacAddr:Server Error: " + str(code) + " msg: " + body)
         return 2
     elif code == 400:
-        this.__logger__.warning("queryMyMacAddr:400 Error:msg: " + body)
+        Logger.warning("queryMyMacAddr:400 Error:msg: " + body)
         return 4
     elif code == 403:
-        this.__logger__.warning("queryMyMacAddr:403 Error:msg: " + body)
+        Logger.warning("queryMyMacAddr:403 Error:msg: " + body)
         return 3  # Permission denied due to initiated
     elif code == 429:
-        this.__logger__.warning("queryMyMacAddr:429 Error:msg: " + body)
+        Logger.warning("queryMyMacAddr:429 Error:msg: " + body)
         return 5  # Permission denied due to initiated
     else:
         #  Unknown Error
-        this.__logger__.error("queryMyMacAddr:Unknown Error: " + str(code) + " msg: " + body)
+        Logger.error("queryMyMacAddr:Unknown Error: " + str(code) + " msg: " + body)
         return 1
 
 
@@ -231,57 +230,60 @@ def queryMyMacAddr(self,secret):
 #  ERROR: returns 2 when a retry is needed (server error), return 3 for incorrect secret key, return 4 for empty/invalid MAC addr of self.
 #  CATCH-ALL: Returns a 1 for other errors.
 def forgetUser(MacAddrSelf, secretKey):
-    c = this.__curlHandle__
-    c.setopt(c.URL, this.__baseURL__+'ForgetMe')
     d = {}
     d['Self'] = MacAddrSelf
     d['Secret'] = secretKey
     # Form data must be provided already urlencoded.
     postfields = json.dumps(d)
-    this.__logger__.info("forgetUser:postfields="+postfields)
+    Logger.info("forgetUser:postfields="+postfields)
     # Sets request method to POST,
     # Content-Type header to application/x-www-form-urlencoded
     # and data to send in request body.
-    c.setopt(c.POSTFIELDS, postfields)
-    c.setopt(c.WRITEFUNCTION, this.__buffer_obj__.write)
-    c.setopt(pycurl.USERAGENT, 'COVIDContactTracerApp/1.0')
-    c.perform()
+    httpReq(this.__baseURL__+'ForgetMe',postfields,this.__header__,30,'POST')
+    code = this.__code__
+    if type(code) is not int:
+        Logger.error("ForgetMe:Unknown Error: No response")
+        return 2
+    body = repr(this.__body__)
 
-    code = c.getinfo(pycurl.HTTP_CODE)
-    body = str(this.__buffer_obj__.getvalue())
-    resetResources()
 
     if code == 201 and "Goodbye. " in body:
         #  Server Ack Success
         return 0
     elif code >= 500:
         #  Retry
-        this.__logger__.warning("forgetUser:Server Error: " + str(code) + " msg: " + body)
+        Logger.warning("forgetUser:Server Error: " + str(code) + " msg: " + body)
         return 2
     elif code == 400:
-        this.__logger__.warning("forgetUser:400 Error:msg: " + body)
+        Logger.warning("forgetUser:400 Error:msg: " + body)
         return 4
     elif code == 403:
-        this.__logger__.warning("forgetUser:403 Error:msg: " + body)
+        Logger.warning("forgetUser:403 Error:msg: " + body)
         return 3  # Permission denied due to initiated
     else:
         #  Unknown Error
-        this.__logger__.error("forgetUser:Unknown Error: " + str(code) + " msg: " + body)
+        Logger.error("forgetUser:Unknown Error: " + str(code) + " msg: " + body)
         return 1
 
 
+def httpReq(url,body,headers,timeout,method):
+    req = UrlRequest(url, req_body=body,req_headers=headers,timeout=timeout,method=method,debug=False)
+    req.wait()
+    if req.resp_status is not None:
+        this.__code__ = req.resp_status
+        this.__body__ = req.result
+    else:
+        this.__code__ = 500
+        this.__body__ = ""
+
 #  Function to reset resources within this module, do not call
 def resetResources():
-    c = this.__curlHandle__
-    del this.__buffer_obj__
-    this.__buffer_obj__ = BytesIO()
-    c.reset()
+    pass
 
 
 #  Function to free all resources used, call when exiting
 def freeResources():
-    c = this.__curlHandle__
-    c.close()
+    pass
 
 
 #  test function, do not call
