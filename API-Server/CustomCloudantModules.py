@@ -160,7 +160,7 @@ def cloudantCleanup():
 
 def resetDatabase(key):
     client = this.__client__
-    if key == creds.resetAuth:
+    if key == creds.adminPass:
         client.delete_database(this.userDatabaseName)
         this.__userDatabase__ = client.create_database(this.userDatabaseName)
         client.delete_database(this.hospitalDatabaseName)

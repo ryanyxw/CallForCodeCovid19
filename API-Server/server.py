@@ -20,12 +20,16 @@ OPERATORS = re.compile('SELECT|UPDATE|INSERT|DELETE|\*|OR|=', re.IGNORECASE)
 ip_ban_list = ExpiringDict(max_len=50*50000, max_age_seconds=15*60)
 mac_ban_list = ExpiringDict(max_len=25*50000, max_age_seconds=15*60)
 key_ban_list = ExpiringDict(max_len=25*1230, max_age_seconds=15*60)
+maintenance = False
 
 ccm.init()
 
 app = flask.Flask(__name__)
 @app.before_request
-def block_method():
+def before_request():
+	global maintenance
+	if maintenance and request.path != '/maintenance':
+		abort(503)
 	ip = request.environ.get('REMOTE_ADDR')
 	if ip == '127.0.0.1' or ip == '0.0.0.0' or ip == '0.0.0.0.0.0':
 		ip = request.environ.get('HTTP_X_REAL_IP')
@@ -514,6 +518,27 @@ def revokeHostpital():
 		return 'Invalid admin password. ', 403
 	ccm.revokeHospital(ID)
 	return 'Hospital removed', 202
+
+
+@app.route('/maintenance',methods=['POST'])
+def pauseServer():
+	global maintenance
+	data = request.get_json(force=True)
+	if 'AdminPass' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Improper Request', 400
+	if creds.adminAgent not in request.user_agent.string:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return "Permission Denied",403
+	if data['AdminPass'] != creds.adminPass:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return 'Invalid admin password. ', 403
+	if maintenance != True:
+		maintenance = True
+		return 'Maintenance  mode on', 200
+	else:
+		maintenance = False
+		return 'Maintenance mode off', 200
 
 
 @atexit.register
