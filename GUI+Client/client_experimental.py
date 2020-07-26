@@ -199,7 +199,9 @@ def queryMyMacAddr(self,secret):
         return 2
     body = repr(this.__body__)
 
-    if code == 211:
+    if code == 221:
+        return -2
+    elif code == 211:
         #  Contacted Positive MAC Addr
         return -1
     elif code == 200:

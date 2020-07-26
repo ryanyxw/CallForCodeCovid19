@@ -13,25 +13,31 @@ this = sys.modules[__name__]
 this.__username__ = creds.username
 this.__apiKey__ = creds.apiKey
 this.__client__ = None
-this.__myDatabase__ = None
+this.__userDatabase__ = None
 # This is the name of the database we are working with.
-this.databaseName = "persons_db"
+this.userDatabaseName = "persons_db"
+this.hospitalDatabaseName = "hospitals_db"
 def init():
     client = Cloudant.iam(this.__username__, this.__apiKey__)
     client.connect()
 
-    myDatabase = client.create_database(this.databaseName)
-    if not myDatabase.exists():
+    userDatabase = client.create_database(this.userDatabaseName)
+    if not userDatabase.exists():
         #  IDK, raise some error or panic
-        client.create_database(this.databaseName)
+        client.create_database(this.userDatabaseName)
+    hospitalDatabase = client.create_database(this.hospitalDatabaseName)
+    if not userDatabase.exists():
+        #  IDK, raise some error or panic
+        client.create_database(this.hospitalDatabaseName)
     this.__client__ = client
-    this.__myDatabase__ = myDatabase
+    this.__userDatabase__ = userDatabase
+    this.__hospitalDatabase__ = hospitalDatabase
 
 
 def personExists(MAC_Addr):
     client = this.__client__
-    myDatabase = this.__myDatabase__
-    if not Document(myDatabase, MAC_Addr).exists():
+    userDatabase = this.__userDatabase__
+    if not Document(userDatabase, MAC_Addr).exists():
         return False
     else:
         try:
@@ -46,7 +52,7 @@ def personExists(MAC_Addr):
 def addPerson(MAC_Addr,state,secretKey,time):
     #  Add a person if not already created
     client = this.__client__
-    myDatabase = this.__myDatabase__
+    userDatabase = this.__userDatabase__
     if not personExists(MAC_Addr):
         data = {}
         data['_id'] = MAC_Addr
@@ -54,7 +60,7 @@ def addPerson(MAC_Addr,state,secretKey,time):
         data['SecretKey'] = secretKey
         data['TimeOfLastAccess'] = time.strftime('%Y-%m-%d_%H:%M:%S.%f')
         try:
-            document = myDatabase.create_document(data, throw_on_exists=True)
+            document = userDatabase.create_document(data, throw_on_exists=True)
             return True
         except cloudant.error.CloudantDatabaseException:
             changeState(MAC_Addr,state)
@@ -66,9 +72,9 @@ def addPerson(MAC_Addr,state,secretKey,time):
 def changeState(MAC_Addr,newState):
     # Edit or add user state
     client = this.__client__
-    myDatabase = this.__myDatabase__
-    if Document(myDatabase, MAC_Addr).exists():
-        with Document(myDatabase, MAC_Addr) as document:
+    userDatabase = this.__userDatabase__
+    if Document(userDatabase, MAC_Addr).exists():
+        with Document(userDatabase, MAC_Addr) as document:
             document.field_set(document, 'State', newState)
             return True
     else:
@@ -78,9 +84,9 @@ def changeState(MAC_Addr,newState):
 def changeSecretKey(MAC_Addr,secretKey):
     # Edit or add user Secret Key
     client = this.__client__
-    myDatabase = this.__myDatabase__
-    if Document(myDatabase, MAC_Addr).exists():
-        with Document(myDatabase, MAC_Addr) as document:
+    userDatabase = this.__userDatabase__
+    if Document(userDatabase, MAC_Addr).exists():
+        with Document(userDatabase, MAC_Addr) as document:
             document.field_set(document, 'SecretKey', secretKey)
             return True
     else:
@@ -90,9 +96,9 @@ def changeSecretKey(MAC_Addr,secretKey):
 def changeTimeOfLastAccess(MAC_Addr,time):
     # Edit or add user time of last access
     client = this.__client__
-    myDatabase = this.__myDatabase__
-    if Document(myDatabase, MAC_Addr).exists():
-        with Document(myDatabase, MAC_Addr) as document:
+    userDatabase = this.__userDatabase__
+    if Document(userDatabase, MAC_Addr).exists():
+        with Document(userDatabase, MAC_Addr) as document:
             document.field_set(document, 'TimeOfLastAccess', time.strftime('%Y-%m-%d_%H:%M:%S.%f'))
             return True
     else:
@@ -101,9 +107,9 @@ def changeTimeOfLastAccess(MAC_Addr,time):
 
 def getState(MAC_Addr):
     client = this.__client__
-    myDatabase = this.__myDatabase__
-    if Document(myDatabase, MAC_Addr).exists():
-        with Document(myDatabase, MAC_Addr) as document:
+    userDatabase = this.__userDatabase__
+    if Document(userDatabase, MAC_Addr).exists():
+        with Document(userDatabase, MAC_Addr) as document:
             document.fetch()
             return document['State']
     else:
@@ -112,9 +118,9 @@ def getState(MAC_Addr):
 
 def getSecretKey(MAC_Addr):
     client = this.__client__
-    myDatabase = this.__myDatabase__
-    if Document(myDatabase, MAC_Addr).exists():
-        with Document(myDatabase, MAC_Addr) as document:
+    userDatabase = this.__userDatabase__
+    if Document(userDatabase, MAC_Addr).exists():
+        with Document(userDatabase, MAC_Addr) as document:
             document.fetch()
             return document['SecretKey']
     else:
@@ -123,9 +129,9 @@ def getSecretKey(MAC_Addr):
 
 def getTimeOfLastAccess(MAC_Addr):
     client = this.__client__
-    myDatabase = this.__myDatabase__
-    if Document(myDatabase, MAC_Addr).exists():
-        with Document(myDatabase, MAC_Addr) as document:
+    userDatabase = this.__userDatabase__
+    if Document(userDatabase, MAC_Addr).exists():
+        with Document(userDatabase, MAC_Addr) as document:
             document.fetch()
             if 'TimeOfLastAccess' in document:
                 strTime = document['TimeOfLastAccess']
@@ -139,9 +145,9 @@ def getTimeOfLastAccess(MAC_Addr):
 
 def removePerson(MAC_Addr):
     client = this.__client__
-    myDatabase = this.__myDatabase__
-    if Document(myDatabase, MAC_Addr).exists():
-        with Document(myDatabase, MAC_Addr) as document:
+    userDatabase = this.__userDatabase__
+    if Document(userDatabase, MAC_Addr).exists():
+        with Document(userDatabase, MAC_Addr) as document:
             document.delete()
             return True
     else:
@@ -155,9 +161,56 @@ def cloudantCleanup():
 def resetDatabase(key):
     client = this.__client__
     if key == creds.resetAuth:
-        client.delete_database(this.databaseName)
-        this.__myDatabase__ = client.create_database(this.databaseName)
+        client.delete_database(this.userDatabaseName)
+        this.__userDatabase__ = client.create_database(this.userDatabaseName)
+        client.delete_database(this.hospitalDatabaseName)
+        this.__hospitalDatabase__ = client.create_database(this.hospitalDatabaseName)
         return True
+    else:
+        return False
+
+
+def hospitalExists(ID):
+    client = this.__client__
+    userDatabase = this.__hospitalDatabase__
+    if not Document(userDatabase, ID).exists():
+        return False
+    return True
+
+
+def addHospital(ID,password):
+    #  Add a person if not already created
+    client = this.__client__
+    userDatabase = this.__hospitalDatabase__
+    if not hospitalExists(ID):
+        data = {}
+        data['_id'] = ID
+        data['Password'] = password
+        try:
+            document = userDatabase.create_document(data, throw_on_exists=True)
+            return True
+        except cloudant.error.CloudantDatabaseException:
+            return False
+
+
+def getHospitalPassword(ID):
+    client = this.__client__
+    userDatabase = this.__hospitalDatabase__
+    if Document(userDatabase, ID).exists():
+        with Document(userDatabase, ID) as document:
+            document.fetch()
+            return document['Password']
+    else:
+        return None
+
+
+def revokeHospital(ID):
+    client = this.__client__
+    userDatabase = this.__hospitalDatabase__
+    if Document(userDatabase, ID).exists():
+        with Document(userDatabase, ID) as document:
+            document.delete()
+            return True
     else:
         return False
 
