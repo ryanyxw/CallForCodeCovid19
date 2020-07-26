@@ -27,6 +27,8 @@ app = flask.Flask(__name__)
 @app.before_request
 def block_method():
 	ip = request.environ.get('REMOTE_ADDR')
+	if ip in ['127.0.0.1','0.0.0.0','0.0.0.0.0.0']:
+		ip = request.environ.get('HTTP_X_REAL_IP') 
 	data = request.get_json(force=True)
 	if 'Self' in data:
 		mac = parseMacAddr(data['Self'])[0]
