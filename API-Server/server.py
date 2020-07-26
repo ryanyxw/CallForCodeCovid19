@@ -27,11 +27,15 @@ app = flask.Flask(__name__)
 @app.before_request
 def block_method():
 	ip = request.environ.get('REMOTE_ADDR')
-	if ip in ['127.0.0.1','0.0.0.0','0.0.0.0.0.0']:
-		ip = request.environ.get('HTTP_X_REAL_IP') 
+	if ip == '127.0.0.1' or ip == '0.0.0.0' or ip == '0.0.0.0.0.0':
+		ip = request.environ.get('HTTP_X_REAL_IP')
 	data = request.get_json(force=True)
 	if 'Self' in data:
-		mac = parseMacAddr(data['Self'])[0]
+		macList = parseMacAddr(data['Self'])
+		if macList == []:
+			mac = None
+		else:
+			mac = macList[0]
 	else:
 		mac = None
 	secretKey = data.get('Secret')
@@ -129,14 +133,10 @@ def receiveQueryMyMacAddr():
 	state = queryAddr(addrList)
 	if state == 1:
 		updateRateLimit(addrList[0])
-		return jsonify(
-			 atRisk = True
-			 ), status.HTTP_200_OK
+		return "At risk, but unauthorative", 211 #Custom response code for at-risk unauthorative
 	elif state == 0:
 		updateRateLimit(addrList[0])
-		return jsonify(
-				 atRisk = False
-				 ), status.HTTP_200_OK
+		return "Not at risk", status.HTTP_200_OK
 	elif state == -1:
 		updateRateLimit(addrList[0])
 		strike(request.environ.get('REMOTE_ADDR'),addrList[0],secret,1)
@@ -354,6 +354,24 @@ def clearCache():
 	else:
 		strike(request.environ.get('REMOTE_ADDR'),None,None,3)
 		return "Permission Denied", 403
+
+
+@app.route('/getCache',methods=["POST"])
+def getCache():
+	if creds.adminAgent not in request.user_agent.string:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return "Permission Denied",403
+	data = request.get_json(force=True)
+	if 'key' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		return "Permission Denied",403
+	if data['key'] == creds.resetAuth:
+		caches = "IP: " + repr(ip_ban_list) + ", MAC: " + repr(mac_ban_list) + ", Secrets: " + repr(key_ban_list)
+		return caches, 200
+	else:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,3)
+		return "Permission Denied", 403
+
 
 def strike(ip,mac,secretKey,strikes):
 	if ip is not None:
