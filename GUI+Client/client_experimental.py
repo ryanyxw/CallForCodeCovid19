@@ -5,15 +5,39 @@ import sys
 import json
 import re
 import os
+from kivy.config import Config
 
 this = sys.modules[__name__]
 
-def init(logFile,verbosityLevel):
+def init(logDir,verbosityLevel):
     this.__code__ = None
     this.__body__ = None
     this.__header__ = headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain", "User-Agent": "COVIDContactTracerApp/1.0"}
     this.__baseURL__ = "https://covidcontacttracer.ngrok.io/"
-    return True
+    this.logVerbosity = verbosityLevel
+    if this.logVerbosity < 10:
+        this.log_level = "trace"
+    elif this.logVerbosity < 20:
+        this.log_level = "debug"
+    elif this.logVerbosity < 30:
+        this.log_level = "info"
+    elif this.logVerbosity < 40:
+        this.log_level = "warn"
+    elif this.logVerbosity < 50:
+        this.log_level = "error"
+    elif this.logVerbosity == 50:
+        this.log_level = "critical"
+    else:
+        kivy.config.log_level = "trace"
+    if os.path.isdir(logDir):
+        Config.set('kivy', 'log_level', this.log_level)
+        Config.set('kivy', 'log_dir', logDir)
+        Config.set('kivy', 'log_name', "CovidContactTracerClient_%y-%m-%d_%_.log")
+        Config.set('kivy', 'log_maxfiles', 49)
+        Config.write()
+        return True
+    else:
+        return False
 
 
 

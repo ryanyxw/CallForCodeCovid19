@@ -10,7 +10,7 @@ from kivy.utils import platform
 from kivy.logger import Logger
 from kivy.logger import LoggerHistory
 from kivy.clock import Clock
-import kivy.config
+from kivy.config import Config
 
 #Changes the window size
 from kivy.core.window import Window
@@ -25,7 +25,7 @@ import sys
 #Regular Expressions
 import re
 #Client
-import client
+import client_experimental as client
 #network interfaces
 import netifaces
 #Using a for loop to continue requests if the request failed
@@ -44,28 +44,30 @@ if platform != 'android':
 else:
     this.appPath = os.path.dirname(__file__)
 this.versionNumber = '1.0.0'
-this.logVerbosity = 50
+this.logVerbosity = 20
 this.storeName = 'local'
 this.deleteAllData = False
-
-kivy.config.log_dir = this.appPath
 if this.logVerbosity < 10:
-    kivy.config.log_level = "trace"
+    this.log_level = "trace"
 elif this.logVerbosity < 20:
-    kivy.config.log_level = "debug"
+    this.log_level = "debug"
 elif this.logVerbosity < 30:
-    kivy.config.log_level = "info"
+    this.log_level = "info"
 elif this.logVerbosity < 40:
-    kivy.config.log_level = "warn"
+    this.log_level = "warn"
 elif this.logVerbosity < 50:
-    kivy.config.log_level = "error"
+    this.log_level = "error"
 elif this.logVerbosity == 50:
-    kivy.log_level = "critical"
+    this.log_level = "critical"
 else:
     kivy.config.log_level = "trace"
-kivy.config.log_name = "MainGUI_%y-%m-%d_%_.txt"
-kivy.config.log_maxfiles = 49
 
+
+Config.set('kivy', 'log_level', this.log_level)
+Config.set('kivy', 'log_dir', this.appPath)
+Config.set('kivy', 'log_name', "CovidContactTracerGUI_%y-%m-%d_%_.log")
+Config.set('kivy', 'log_maxfiles', 49)
+Config.write()
 #Manages all permanent storage and adding into the JSON file
 this.store = JsonStore(this.appPath + os.sep + this.storeName + '.json')
 
@@ -290,7 +292,7 @@ class HomePage(Screen, Widget):
         if not os.path.isfile(this.appPath + os.sep + "client.log"):
             f = open(this.appPath + os.sep + "client.log", "w")
             f.close()
-        client.init(this.appPath + os.sep + "client.log", this.logVerbosity)
+        client.init(this.appPath, this.logVerbosity)
         #self.macClass = GetMacAdd()
 #Checks if there is a file. If there is not, initiate all 4 necessary parts
 
