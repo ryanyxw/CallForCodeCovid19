@@ -391,7 +391,7 @@ class HomePage(Screen, Widget):
             self.actualMac = ""
             showError()
 
-    #The line of code that calls the function runTimeFunction every 10 seconds
+    #The line of code that calls the function runTimeFunction every 20 ticks
         Clock.schedule_interval(self.runTimeFunction, 20)
 
     def runTimeFunction(self, deltaT):

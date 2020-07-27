@@ -11,8 +11,11 @@
 - [ ] Long Article **(RW)**
 - [ ] **10 word** discription **(BOTH)**
 - [ ] Production Ready
-	- [ ] Pack the programs for Windows, OS X, Ubuntu **(TX)**
-	- [ ] Package for Android
+	- [ ] Pack the programs for Windows, OS X, Ubuntu
+		- [ ] Ubuntu **(TX)**
+		- [ ] macOS X **(RW)**
+		- [ ] Windows **(RW)**
+	- [ ] ~~Package for Android~~
 		- [x] Client Refactoring to use Kivy modules **(TX)**
 		- [ ] Resolve other errors upon build **(RW)**
 	- [ ] Cleanup of code
@@ -37,3 +40,4 @@
 		- [ ] Censorship of cerain terms
 		- [ ] Scrub language
 		- [ ] Improve visibility
+	- [x] Server Feature Documentation **(TX)**
