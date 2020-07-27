@@ -168,6 +168,7 @@ WindowManager:
         size_hint: 0.2, 0.05
         text: "Options"
         on_release:
+            root.clearCounter()
             app.root.current = "sidebar"
             root.manager.transition.direction = "right"
 
@@ -197,6 +198,7 @@ WindowManager:
         size_hint: 0.2, 0.05
         text: "Options"
         on_release:
+            root.clearCounter()
             app.root.current = "sidebar"
             root.manager.transition.direction = "right"
 
