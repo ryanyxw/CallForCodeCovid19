@@ -289,9 +289,6 @@ class HomePage(Screen, Widget):
 #Determines if the server initiation is correct (should only be a one time thing)
         isSuccessful = True
 
-        if not os.path.isfile(this.appPath + os.sep + "client.log"):
-            f = open(this.appPath + os.sep + "client.log", "w")
-            f.close()
         client.init(this.appPath, this.logVerbosity)
         #self.macClass = GetMacAdd()
 #Checks if there is a file. If there is not, initiate all 4 necessary parts
@@ -360,11 +357,11 @@ class HomePage(Screen, Widget):
             self.selfMacAddress = ""
             self.actualMac = ""
 
-    #The line of code that calls the function runTimeFunction every 0.5 seconds
-        Clock.schedule_interval(self.runTimeFunction, 10)
+    #The line of code that calls the function runTimeFunction every 10 seconds
+        Clock.schedule_interval(self.runTimeFunction, 20)
 
     def runTimeFunction(self, deltaT):
-        pass
+        self.macClass.getMac()
 
 
     def coronaCatcherButtonClicked(self):
