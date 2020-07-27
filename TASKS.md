@@ -1,0 +1,39 @@
+- [ ] Roadmap
+	- [ ] Future Funding: Donations?
+	- [ ] Enhancements: Better Interface? 
+	- [ ] When COVID-19 passes? Gladly end the project or move on to other pandemics
+	- [ ] Maintenance and Patching? Alerts
+- [ ] 3 Minute Video **(TX)**
+	- [ ] Explain Contact Tracing **IN PROG**
+	- [ ] Explain our app
+	- [ ] Emphasize privacy
+- [ ] Short Article **(RW)**
+- [ ] Long Article **(RW)**
+- [ ] **10 word** discription **(BOTH)**
+- [ ] Production Ready
+	- [ ] Pack the programs for Windows, OS X, Ubuntu **(TX)**
+	- [ ] Package for Android
+		- [x] Client Refactoring to use Kivy modules **(TX)**
+		- [ ] Resolve other errors upon build **(RW)**
+	- [ ] Cleanup of code
+		- [ ] Remove debugging tests **(RW)**
+		- [ ] Remove print statements **(RW)**
+	- [x] Releases Page **(TX)**
+	- [ ] Dev Contact Methods **(RW)**
+	- [ ] Android Compatible **(RW)**
+	- [ ] Confimation via hospitals
+		- [x] Server **(TX)**
+		- [x] Client **(TX)**
+		- [ ] GUI **(RW)**
+	- [ ] timer based maintenance **(TX)**
+		- [ ] ~~List cleanup~~
+		- [ ] MAC addr Scanning
+	- [ ] GUI error page **(RW)**
+	- [ ] GUI color, icons, etc **(RW)**
+		- [ ] Hide impossible options
+		- [ ] Ask for user confirmation before irreversible tasks (delete, report)
+		- [ ] Color cues for status
+	- [ ] Improve messages seen by user **(RW)**
+		- [ ] Censorship of cerain terms
+		- [ ] Scrub language
+		- [ ] Improve visibility
