@@ -21,13 +21,13 @@
 	- [x] Releases Page **(TX)**
 	- [ ] Dev Contact Methods **(RW)**
 	- [ ] Android Compatible **(RW)**
-	- [ ] Confimation via hospitals
+	- [x] Confimation via hospitals
 		- [x] Server **(TX)**
 		- [x] Client **(TX)**
-		- [ ] GUI **(RW)**
-	- [ ] timer based maintenance **(TX)**
-		- [ ] ~~List cleanup~~
-		- [ ] MAC addr Scanning
+		- [x] GUI **(RW)**
+	- [x] timer based maintenance **(TX)**
+		- [x] ~~List cleanup~~
+		- [x] MAC addr Scanning
 	- [ ] GUI error page **(RW)**
 	- [ ] GUI color, icons, etc **(RW)**
 		- [ ] Hide impossible options
