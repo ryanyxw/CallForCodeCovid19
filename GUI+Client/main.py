@@ -515,7 +515,7 @@ class QuitAppPage(Screen):
     def deleteDataAndQuitButtonClicked(self):
         Logger.info('Delete data and quit clicked')
         self.quitCount += 1
-        if (self.quitCount % 10 == 0):
+        if (self.quitCount % 5 == 0):
             if (not isInternet()):
                 self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 No Internet Connection"
                 this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 No Internet Connection")
@@ -586,7 +586,7 @@ class SendDataPage(Screen):
         Logger.info('imInfected button clicked')
         self.infectedCount += 1
         self.recoveredCount = 0
-        if (self.infectedCount % 10 == 0):
+        if (self.infectedCount % 6 == 0):
             if (not isInternet()):
                 self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nNo Internet Connection"
                 this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nNo Internet Connection")
@@ -624,7 +624,7 @@ class SendDataPage(Screen):
         Logger.info('iJustRecovered button clicked')
         self.recoveredCount += 1
         self.infectedCount = 0
-        if (self.recoveredCount % 10 == 0):
+        if (self.recoveredCount % 6 == 0):
             if (not this.store.get("isInfected")["value"]):
                 self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nYou must first get infected to recover"
                 this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nYou must first get infected to recover")
