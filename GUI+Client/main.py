@@ -11,6 +11,9 @@ from kivy.logger import Logger
 from kivy.logger import LoggerHistory
 from kivy.clock import Clock
 from kivy.config import Config
+from kivy.uix.popup import Popup
+from kivy.uix.floatlayout import FloatLayout
+
 
 #Changes the window size
 from kivy.core.window import Window
@@ -274,6 +277,16 @@ class GetMacAdd():
             return self.getString(this.store.get("recentTen")["value"])
 
 
+def showError():
+    show = ErrorPopup()
+    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65))
+    popupWindow.open()
+    
+
+class ErrorPopup(Screen, FloatLayout):
+    pass
+    
+
 #Class for the homepage screen
 class HomePage(Screen, Widget):
     def __init__(self, **kwargs):
@@ -392,24 +405,31 @@ class HomePage(Screen, Widget):
             elif (returnVal == 2):
                 self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error, please quit the app and retry (2)"
                 this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error, please quit the app and retry (2)")
+                showError()
             elif (returnVal == 3):
                 self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, you're kinda screwed (3)"
                 this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, you're kinda screwed (3)")
+                showError()
             elif (returnVal == 4):
                 self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, you're kinda screwed (4)"
                 this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, you're kinda screwed (4)")
+                showError()
             elif (returnVal == 5):
                 self.statusLabel.text = "Please only check once every 8 hours."
                 this.store.put("homeLabel", value = "Please only check once every 8 hours.")
+                showError()
             else:
                 self.statusLabel.text = "1 returned"
                 this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 returned")
+                showError()
         else:
             self.statusLabel.text = "Please only check once every 8 hours. Feel free \nto return at " + str(allowedTime)
             this.store.put("homeLabel", value = "Please only check once every 8 hours. Feel free \nto return at " + str(allowedTime))
+            showError()
 
     #This test function is used to mimic adding a new mac to the batch
     def testFunction(self): #Delete kivy line 75 - 79
+        showPopup()
         #actualMac is the variable that stores the current network after arp-a again
         self.actualMac = self.macClass.testGetMac()
         #This changes the displayed text into the current network by formatting it with the getString method in the macClass
@@ -457,18 +477,23 @@ class QuitAppPage(Screen):
         elif (returnValue == 2):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error (2)"
             this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error (2)")
+            showError()
         elif (returnValue == 3):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nincorrect secret key (3)"
             this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nincorrect secret key (3)")
+            showError()
         elif (returnValue == 4):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \ninvalid mac addr of self (4)"
             this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \ninvalid mac addr of self (4)")
+            showError()
         elif (returnValue == 1):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 is returned (1)"
             this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 is returned (1)")
+            showError()
         else:
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nserver returned unknown command : " + str(returnValue)
             this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nserver returned unknown command : " + str(returnValue))
+            showError()
 
 
 #SendData class page (reference my.kv file)
@@ -493,12 +518,15 @@ class SendDataPage(Screen):
         if (returnVal == 2):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)"
             this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)")
+            showError()
         elif (returnVal == 3):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)"
             this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)")
+            showError()
         elif (returnVal == 4):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid CSV. Restart app and contact admin"
             this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid CSV. Restart app and contact admin")
+            showError()
         else:
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Get well soon!"
             this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Get well soon!")
@@ -510,12 +538,15 @@ class SendDataPage(Screen):
         if (returnVal == 2):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)"
             this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)")
+            showError()
         elif (returnVal == 3):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)"
             this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)")
+            showError()
         elif (returnVal == 4):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid MAC Address of self. Restart app and contact admin (4)"
             this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid MAC Address of self. Restart app and contact admin (4)")
+            showError()
         else:
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Good job recovering! "
             this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Good job recovering! ")

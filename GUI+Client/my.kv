@@ -42,6 +42,20 @@ WindowManager:
 			pos: int(self.center_x - self.texture_size[0] / 2.), int(self.center_y - self.texture_size[1] / 2.)
 		PopMatrix
 
+<ErrorPopup>:
+    ScaleLabel:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleLabel:
+        text: "Click Anywhere Outside The Error Box To Leave"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.2}
+    ScaleLabel:
+        text: "Look at status bar for more error detail"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.05}
+
 <HomePage>:
     name: "home"
     statusLabel : status
