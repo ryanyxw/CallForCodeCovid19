@@ -14,7 +14,6 @@ import CustomCloudantModules as ccm
 import creds
 
 """
-Author: Tyllis Xu @LivelyCarpet87
 Version: 2.2.3
 Features:
 
