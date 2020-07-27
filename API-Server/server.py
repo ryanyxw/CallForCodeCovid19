@@ -13,23 +13,77 @@ from expiringdict import ExpiringDict
 import CustomCloudantModules as ccm
 import creds
 
+"""
+Author: Tyllis Xu @LivelyCarpet87
+Version: 2.2.3
+Features:
+
+1. Security:
+ 	1. The server automatically bans anyone who attempts to access the admin
+	section without the correct password by IP for 15 minutes
+	2. Users who repeatedly conduct behaviors that seek to gain illegitimate
+	access, such as SQL injection, password spraying, or spam,
+	will be blocked for 15 minutes if they conduct 3 of such actions within the
+	span of 15 minutes. Ban time is reset to 15 minutes upon
+	every further attempt.
+	3. Every user is granted a 52 letter random secret key to prevent user impersonation
+	by others that is paired with their own MAC addresses
+	4. Hospitals are granted a 52 letter password that is then hashed to verify
+	their identity, to prevent inpersonation in case of database leakage
+	4. Most forms of USER input is strictly validated against regular expressions
+	to prevent attack vectors.
+	5. Administration tasks require a special user agent to further prevent
+	admin inpersonation
+	6. All credentials are stored in a seperate file called creds.py and not
+	stored in the online Github repository, to prevent leakage of secret key
+
+2. Privacy:
+	1. Only information stored from the user is their MAC addresses. Only one of
+	such addresses is initially stored.
+	2. Users can only access information regarding their own addresses. They
+	cannot see the information of others without another person's 52 letter secret key.
+	3. When the user reports that they have tested positive for COVID-19, they
+	report to the server the MAC addresses they had encountered and their own MAC addresses.
+	4. All MAC addresses encountered by someone who reported to be positive are
+	marked on the server. Records are created independent of each other with no
+	data indicating correlation. In the case of complete compromise of the database,
+	attackers will not be able to know which persons had met each other.
+	5. No identifiable information of the user is ever shared with others at any point.
+
+3. Scalability:
+ 	1. This server is written in flask and supports multithreading and could easily
+	be upscaled without any impact.
+	2. Cloudant database tombstones (leftover records from deletions of user data)
+	could be cleared periodically by setting the server to maintenance mode via
+	the admin api, allowing it to pause service and give admins the opportunity
+	to clear databases with 0 data loss. The server will answer requests with 503
+	(code for Service Temporarily Unavailable), prompting the client to retry shortly.
+"""
+
+# Regular expressions to filter user input
 isMacAddr = re.compile(r"([\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2})")
 isFloodAddr = re.compile("FF:FF:FF:FF:FF:FF",re.I)
 OPERATORS = re.compile('SELECT|UPDATE|INSERT|DELETE|\*|OR|=', re.IGNORECASE)
-
+# Initiate lists of banned entities
 ip_ban_list = ExpiringDict(max_len=50*50000, max_age_seconds=15*60)
 mac_ban_list = ExpiringDict(max_len=25*50000, max_age_seconds=15*60)
 key_ban_list = ExpiringDict(max_len=25*1230, max_age_seconds=15*60)
+# Set maintenance mode to false
 maintenance = False
-
+# Initiation of custom cloudant manipulation library, IAM signin and database integrity checks
 ccm.init()
-
 app = flask.Flask(__name__)
+
+
+# Test if user is banned (had 3 strikes) or is committing a bannable offense (SQL injection, admin inpersonation)
+# This is designed to slow down and discourage attackers without affecting users.
 @app.before_request
 def before_request():
 	global maintenance
+	# Test if server in maintenance mode and if it is an admin trying to toggle maintenance mode
 	if maintenance and request.path != '/maintenance':
-		abort(503)
+		abort(503)  # return 503 unavailable if it is in maintainance mode and NOT an admin exiting maintenance mode
+	# Get identifying information to test against ban list
 	ip = request.environ.get('REMOTE_ADDR')
 	if ip == '127.0.0.1' or ip == '0.0.0.0' or ip == '0.0.0.0.0.0':
 		ip = request.environ.get('HTTP_X_REAL_IP')
@@ -43,23 +97,26 @@ def before_request():
 	else:
 		mac = None
 	secretKey = data.get('Secret')
+	# Proccess if User is on any ban list
 	if ip_ban_list.get(ip) is not None:
 		if ip_ban_list.get(ip) >= 3:
-			strike(ip,mac,secretKey,1)
+			strike(ip,mac,secretKey,1) # +1 strike to renew ban
 			abort(403)
 	elif mac_ban_list.get(mac) is not None:
 		if mac_ban_list.get(mac) >= 3:
-			strike(ip,mac,secretKey,1)
+			strike(ip,mac,secretKey,1) # +1 strike to renew ban
 			abort(403)
 	elif key_ban_list.get(secretKey) is not None:
 		if key_ban_list.get(secretKey) >= 3:
-			strike(ip,mac,secretKey,1)
+			strike(ip,mac,secretKey,1) # +1 strike to renew ban
 			abort(403)
+	# Test if user is attempting to input malicious data
 	elif re.search(OPERATORS,repr(mac)+repr(secretKey)) is not None:
-		strike(ip,mac,secretKey,3)
+		strike(ip,mac,secretKey,3) # 3 strikes for major offense, HIGHLY UNLIKELY to be of user error or application error
 		abort(403)
+	# test if user is using an invalid (unofficial) User Agent
 	elif 'COVIDContactTracerApp' not in request.user_agent.string and creds.adminAgent not in request.user_agent.string:
-		strike(ip,mac,secretKey,3)
+		strike(ip,mac,secretKey,3) # 3 strikes for major offense, HIGHLY UNLIKELY to be of user error or application error
 		abort(403)
 
 
@@ -70,16 +127,16 @@ def before_request():
 def initSelf():
 	data = request.get_json(force=True)
 	if 'Self' not in data:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Improper Request', 400
 	self = data['Self']
 	selfList = parseMacAddr(self)
 	if not selfList:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Bad MAC Address!', 400
 	secret = initNewUser(selfList)
 	if secret == "":
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Already Initiated. ', 403
 	elif secret is None:
 		return status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -102,7 +159,7 @@ def receivePositiveReport():
 	self = parseMacAddr(self)
 	metAddrList = parseMacAddr(metAddrList)
 	if not metAddrList or not self:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Bad MAC Address!', 400
 	valid = verifySecret(self[0],secret)
 	if valid:
@@ -111,7 +168,7 @@ def receivePositiveReport():
 			msg = "Get well soon. "
 		), status.HTTP_201_CREATED
 	else:
-		strike(None,self[0],secret,1)
+		strike(None,self[0],secret,1)  # 1 strike for suspicious behavior, mac address and secret key banned if 3 strikes in 15 minutes, to prevent password guessing
 		return 'Incorect Secret Key', 403
 
 
@@ -126,10 +183,10 @@ def receiveQueryMyMacAddr():
 	secret = data['Secret']
 	addrList = parseMacAddr(self)
 	if not addrList:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Bad MAC Address!', 400
 	if not verifySecret(addrList[0],secret):
-		strike(None,addrList[0],secret,1)
+		strike(None,addrList[0],secret,1)   # 1 strike for suspicious behavior, mac address and secret key banned if 3 strikes in 15 minutes, to prevent password guessing
 		return 'Bad Request Key', 403
 	if not passRateLimit(addrList[0]):
 		strike(None,addrList[0],secret,1)
@@ -158,13 +215,13 @@ def receiveQueryMyMacAddr():
 def receiveNegativeReport():
 	data = request.get_json(force=True)
 	if 'Self' not in data or 'Secret' not in data:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Improper Request', 400
 	self = data['Self']
 	secret = data['Secret']
 	addr = parseMacAddr(self)
 	if not addr:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Bad MAC Address!', 400
 	valid = verifySecret(addr[0],secret)
 	if valid:
@@ -175,20 +232,20 @@ def receiveNegativeReport():
 		), status.HTTP_201_CREATED
 	else:
 		return 'Incorect Secret Key', 403
-		strike(None,addr[0],secret,1)
+		strike(None,addr[0],secret,1)  # 1 strike for suspicious behavior, mac address and secret key banned if 3 strikes in 15 minutes, to prevent password guessing
 
 
 @app.route('/ForgetMe', methods=["POST"])
 def forgetSelf():
 	data = request.get_json(force=True)
 	if 'Self' not in data or 'Secret' not in data:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Improper Request', 400
 	self = data['Self']
 	secret = data['Secret']
 	addr = parseMacAddr(self)
 	if not addr:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Bad MAC Address!', 400
 	valid = verifySecret(addr[0],secret)
 	if valid:
@@ -197,7 +254,7 @@ def forgetSelf():
 			msg = "Goodbye. "
 		), status.HTTP_201_CREATED
 	else:
-		strike(request.environ.get('REMOTE_ADDR'),addr[0],secret,1)
+		strike(request.environ.get('REMOTE_ADDR'),addr[0],secret,1)   # 1 strike for suspicious behavior, mac address and secret key banned if 3 strikes in 15 minutes, to prevent password guessing
 		return 'Incorect Secret Key', 403
 
 
@@ -341,11 +398,11 @@ def updateRateLimit(macAddr):
 @app.route('/resetDatabase', methods=["POST"])
 def databaseReset():
 	if creds.adminAgent not in request.user_agent.string:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return "Permission Denied",403
 	data = request.get_json(force=True)
 	if 'key' not in data:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return "Permission Denied",403
 	key = data['key']
 	if ccm.resetDatabase(key):
@@ -358,11 +415,11 @@ def databaseReset():
 @app.route('/clearCache',methods=["POST"])
 def clearCache():
 	if creds.adminAgent not in request.user_agent.string:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return "Permission Denied",403
 	data = request.get_json(force=True)
 	if 'key' not in data:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return "Permission Denied",403
 	if data['key'] == creds.resetAuth:
 		ip_ban_list = []
@@ -377,11 +434,11 @@ def clearCache():
 @app.route('/getCache',methods=["POST"])
 def getCache():
 	if creds.adminAgent not in request.user_agent.string:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return "Permission Denied",403
 	data = request.get_json(force=True)
 	if 'key' not in data:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return "Permission Denied",403
 	if data['key'] == creds.resetAuth:
 		caches = "IP: " + repr(ip_ban_list) + ", MAC: " + repr(mac_ban_list) + ", Secrets: " + repr(key_ban_list)
@@ -422,7 +479,7 @@ def medConfirm():
 	positives = data['Positives']
 	positives = parseMacAddr(positives)
 	if not positives:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Bad MAC Addresses!', 400
 	valid = verifyHospital(ID,password)
 	if valid:
@@ -431,7 +488,7 @@ def medConfirm():
 			msg = "Input recorded"
 		), status.HTTP_201_CREATED
 	else:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Incorect Key', 403
 
 
@@ -480,15 +537,15 @@ def confirmPositive(positives):
 def addHostpital():
 	data = request.get_json(force=True)
 	if 'ID' not in data or 'AdminPass' not in data:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Improper Request', 400
 	ID = data['ID']
 	if data['AdminPass'] != creds.addHospitalPass:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Invalid admin password. ', 403
 	password = initNewHospital(ID)
 	if password == "":
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Already Added. ', 403
 	elif password is None:
 		return status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -512,11 +569,11 @@ def initNewHospital(ID):
 def revokeHostpital():
 	data = request.get_json(force=True)
 	if 'ID' not in data or 'AdminPass' not in data:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Improper Request', 400
 	ID = data['ID']
 	if data['AdminPass'] != creds.rmHospitalPass:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Invalid admin password. ', 403
 	ccm.revokeHospital(ID)
 	return 'Hospital removed', 202
@@ -527,13 +584,13 @@ def pauseServer():
 	global maintenance
 	data = request.get_json(force=True)
 	if 'AdminPass' not in data:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Improper Request', 400
 	if creds.adminAgent not in request.user_agent.string:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return "Permission Denied",403
 	if data['AdminPass'] != creds.adminPass:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return 'Invalid admin password. ', 403
 	if maintenance != True:
 		maintenance = True
