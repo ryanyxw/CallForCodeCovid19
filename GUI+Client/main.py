@@ -80,7 +80,7 @@ this.store = JsonStore(this.appPath + os.sep + this.storeName + '.json')
 #Method that checks internet connection
 def isInternet():
     try:
-        urlopen("https://www.bing.com", timeout = 1)
+        urlopen("https://www.bing.com", timeout = 2)
         return True
     except urllib.error.URLError as Error:
         Logger.error(Error)
@@ -395,10 +395,12 @@ class HomePage(Screen, Widget):
 
     def runTimeFunction(self, deltaT):
         pass
-
+    def loadingStatus(self):
+        self.statusLabel.text = "Loading, please wait for a moment"
 
     def coronaCatcherButtonClicked(self):
         Logger.info('coronaCatcherButtonClicked ')
+        
         if "LastQueryTime" in this.store:
             lastAccess = this.store.get("LastQueryTime")['value']
             lastAccess = datetime.datetime.strptime(lastAccess, '%Y-%m-%d_%H:%M:%S.%f')
@@ -487,9 +489,11 @@ class QuitAppPage(Screen):
         super(QuitAppPage, self).__init__(**kwargs)
 
         self.statusLabel = ObjectProperty(None)
-
+    def loadingStatus(self):
+        self.statusLabel.text = "Loading, please wait for a moment"
     def deleteDataAndQuitButtonClicked(self):
         Logger.info('Delete data and quit clicked')
+        
         if (not isInternet()):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 No Internet Connection"
             this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 No Internet Connection")
@@ -537,9 +541,11 @@ class SendDataPage(Screen):
         for key in macDictionary:
             returnStr += key + ","
         return returnStr
-
+    def loadingStatus(self):
+        self.statusLabel.text = "Loading, please wait for a moment"
     def imInfectedButtonClicked(self):
         Logger.info('imInfected button clicked')
+        
         if (not isInternet()):
             self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nNo Internet Connection"
             this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nNo Internet Connection")

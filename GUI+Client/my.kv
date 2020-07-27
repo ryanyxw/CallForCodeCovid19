@@ -73,6 +73,7 @@ WindowManager:
         size_hint: 0.7, 0.2
         text: "CoronaCatcher (Click to check mac)"
         on_release:
+            root.loadingStatus()
             root.calculateMac()
     ScaleLabel:
         id: mac
@@ -180,6 +181,7 @@ WindowManager:
         size_hint: 0.7, 0.12
         text: "Delete Data"
         on_release:
+            root.loadingStatus()
             root.deleteDataAndQuitButtonClicked()
     ScaleLabel:
         id: status
@@ -205,12 +207,14 @@ WindowManager:
         size_hint: 0.7, 0.12
         text: "I'm Infected"
         on_release:
+            root.loadingStatus()
             root.imInfectedButtonClicked()
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.55}
         size_hint: 0.7, 0.12
         text: "I just recovered"
         on_release:
+            root.loadingStatus()
             root.iJustRecoveredButtonClicked()
     ScaleLabel:
         id: status
