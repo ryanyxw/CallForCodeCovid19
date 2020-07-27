@@ -42,6 +42,8 @@ WindowManager:
 			pos: int(self.center_x - self.texture_size[0] / 2.), int(self.center_y - self.texture_size[1] / 2.)
 		PopMatrix
 
+
+
 <ErrorPopup>:
     ScaleLabel:
         size_hint: 0.6, 0.2
@@ -73,28 +75,23 @@ WindowManager:
         size_hint: 0.7, 0.2
         text: "CoronaCatcher (Click to check mac)"
         on_release:
-            root.loadingStatus()
             root.calculateMac()
     ScaleLabel:
         id: mac
-        pos_hint: {"center_x": 0.5, "center_y": 0.6}
+        pos_hint: {"center_x": 0.5, "center_y": 0.5}
         size_hint: 0.7, 0.1
         text: root.actualMac
     ScaleLabel:
-        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+        pos_hint: {"center_x": 0.5, "center_y": 0.3}
         size_hint: 0.7, 0.1
         text: "Your Mac: " + root.selfMacAddress
-    ScaleLabel:
+    ScaleButton:
         id: status
+        background_color: root.store.get("homeLabelColor")["value"][0], root.store.get("homeLabelColor")["value"][1], root.store.get("homeLabelColor")["value"][2], root.store.get("homeLabelColor")["value"][3]
         pos_hint: {"center_x": 0.5, "bottom": 0.3}
         text: root.store.get("homeLabel")["value"]
-        size_hint: 1, 0.05
-    Button:
-        pos_hint: {"center_x": 0.5, "center_y": 0.2}
-        size_hint: 0.7, 0.1
-        text: "Test"
-        on_release:
-            root.testFunction()
+        size_hint: 1, 0.1
+
 
 
 
@@ -181,13 +178,14 @@ WindowManager:
         size_hint: 0.7, 0.12
         text: "Delete Data"
         on_release:
-            root.loadingStatus()
             root.deleteDataAndQuitButtonClicked()
-    ScaleLabel:
+    ScaleButton:
         id: status
+        background_color: root.store.get("quitAppLabelColor")["value"][0], root.store.get("quitAppLabelColor")["value"][1], root.store.get("quitAppLabelColor")["value"][2], root.store.get("quitAppLabelColor")["value"][3]
         pos_hint: {"center_x": 0.5, "bottom": 0}
         text: root.store.get("quitAppLabel")["value"]
-        size_hint: 1, 0.05
+        size_hint: 1, 0.1
+
 
 
 
@@ -207,20 +205,21 @@ WindowManager:
         size_hint: 0.7, 0.12
         text: "I'm Infected"
         on_release:
-            root.loadingStatus()
             root.imInfectedButtonClicked()
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.55}
         size_hint: 0.7, 0.12
         text: "I just recovered"
         on_release:
-            root.loadingStatus()
             root.iJustRecoveredButtonClicked()
-    ScaleLabel:
+    ScaleButton:
         id: status
+        background_color: root.store.get("sendDataLabelColor")["value"][0], root.store.get("sendDataLabelColor")["value"][1], root.store.get("sendDataLabelColor")["value"][2], root.store.get("sendDataLabelColor")["value"][3]
         pos_hint: {"center_x": 0.5, "bottom": 0}
         text: root.store.get("sendDataLabel")["value"]
-        size_hint: 1, 0.05
+        size_hint: 1, 0.1
+    
+
 
 
 <SeeDataPage>:
