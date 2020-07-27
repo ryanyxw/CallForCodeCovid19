@@ -28,7 +28,7 @@ import sys
 #Regular Expressions
 import re
 #Client
-import client_experimental as client
+import client
 #network interfaces
 import netifaces
 #Using a for loop to continue requests if the request failed
