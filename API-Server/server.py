@@ -251,6 +251,8 @@ def markPositive(addrList, self):
 			while attempt <= 10:
 				if ccm.getState(positive) < metState:
 					success = ccm.changeState(positive,metState)
+				else:
+					success = True
 				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
