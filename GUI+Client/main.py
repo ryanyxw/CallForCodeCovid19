@@ -358,10 +358,10 @@ class HomePage(Screen, Widget):
             self.actualMac = ""
 
     #The line of code that calls the function runTimeFunction every 10 seconds
-        Clock.schedule_interval(self.runTimeFunction, 10)
+        Clock.schedule_interval(self.runTimeFunction, 20)
 
     def runTimeFunction(self, deltaT):
-        self.getMac()
+        self.macClass.getMac()
 
 
     def coronaCatcherButtonClicked(self):
