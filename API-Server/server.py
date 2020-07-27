@@ -253,7 +253,7 @@ def markPositive(addrList, self):
 					success = ccm.changeState(positive,metState)
 				else:
 					success = True
-				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
+				time.sleep(0.1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
 				else:
@@ -263,7 +263,7 @@ def markPositive(addrList, self):
 			attempt = 1
 			while attempt <= 10:
 				success = ccm.addPerson(positive,metState,"",datetime.datetime.fromisoformat('2011-11-04 00:05:23.283'))
-				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
+				time.sleep(0.1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
 				else:
@@ -275,7 +275,7 @@ def markPositive(addrList, self):
 			attempt = 1
 			while attempt <= 10:
 				success = ccm.changeState(positive,selfState)
-				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
+				time.sleep(0.1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
 				else:
@@ -285,7 +285,7 @@ def markPositive(addrList, self):
 			attempt = 1
 			while attempt <= 10:
 				success = ccm.addPerson(positive,selfState,"",datetime.datetime.fromisoformat('2011-11-04 00:05:23.283'))
-				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
+				time.sleep(0.1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
 				else:
@@ -459,7 +459,7 @@ def confirmPositive(positives):
 			attempt = 1
 			while attempt <= 10:
 				success = ccm.changeState(positive,6)
-				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
+				time.sleep(0.1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
 				else:
@@ -469,7 +469,7 @@ def confirmPositive(positives):
 			attempt = 1
 			while attempt <= 10:
 				success = ccm.addPerson(positive,6,"",datetime.datetime.fromisoformat('2011-11-04 00:05:23.283'))
-				time.sleep(1)  # Delay to prevent reaching free tier IBM Cloudant limits
+				time.sleep(0.1)  # Delay to prevent reaching free tier IBM Cloudant limits
 				if success:
 					break
 				else:
