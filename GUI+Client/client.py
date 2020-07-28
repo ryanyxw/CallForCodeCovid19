@@ -289,6 +289,14 @@ def freeResources():
     pass
 
 
+def testInternetConnection():
+    httpReq("www.bing.com",None,None,30,'GET')
+    if this.code != 500:
+        return True
+    else:
+        return False
+
+
 #  test function, do not call
 def tests():
     print("initiating program")
