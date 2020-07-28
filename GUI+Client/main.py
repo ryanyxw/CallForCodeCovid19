@@ -34,6 +34,8 @@ import netifaces
 #Using a for loop to continue requests if the request failed
 #Status bar change color if there is an error
 
+#Change background color
+
 import urllib
 from urllib.request import urlopen
 
@@ -283,7 +285,6 @@ class GetMacAdd():
             return self.getString(this.store.get("recentTen")["value"])
         else:
             for macAdd in diffArr:
-                print("TRUE == " + repr(macAdd))
                 self.storage.addEntry(macAdd, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
             return self.getString(this.store.get("recentTen")["value"])
@@ -321,7 +322,6 @@ class HomePage(Screen, Widget):
         self.statusLabel = ObjectProperty(None)
         #Variable that stores what the mac addresses are printed on. This is just initialization
         self.macDisplay = ObjectProperty(None)
-        print("isExist before = " + repr(this.store.exists('numEntries')))
 #If this is a new user
         if (not this.store.exists('numEntries')):
             #First initiates everything within the json file
@@ -704,7 +704,264 @@ class SeeDataPage(Screen):
 class WindowManager(ScreenManager):
     pass
 
-kv = Builder.load_file("my.kv")
+kivyFile = '''
+WindowManager:
+    HomePage:
+    SideBarPage:
+    AboutUsPage:
+    QuitAppPage:
+    SendDataPage:
+    SeeDataPage:
+
+<ScaleLabel@Label>:
+	_scale: 1. if self.texture_size[0] < self.width else float(self.width) / self.texture_size[0]
+	canvas.before:
+		PushMatrix
+		Scale:
+			origin: self.center
+			x: self._scale or 1.
+			y: self._scale or 1.
+	canvas.after:
+		PopMatrix
+
+<-ScaleButton@Button>:
+	state_image: self.background_normal if self.state == 'normal' else self.background_down
+	disabled_image: self.background_disabled_normal if self.state == 'normal' else self.background_disabled_down
+	_scale: 1. if self.texture_size[0] < self.width else float(self.width) / self.texture_size[0]
+	canvas:
+		Color:
+			rgba: self.background_color
+		BorderImage:
+			border: self.border
+			pos: self.pos
+			size: self.size
+			source: self.disabled_image if self.disabled else self.state_image
+		PushMatrix
+		Scale:
+			origin: self.center
+			x: self._scale or 1.
+			y: self._scale or 1.
+		Color:
+			rgba: self.disabled_color if self.disabled else self.color
+		Rectangle:
+			texture: self.texture
+			size: self.texture_size
+			pos: int(self.center_x - self.texture_size[0] / 2.), int(self.center_y - self.texture_size[1] / 2.)
+		PopMatrix
+
+
+
+<ErrorPopup>:
+    ScaleLabel:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleLabel:
+        text: "Click Anywhere Outside The Error Box To Leave"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.2}
+    ScaleLabel:
+        text: "Look at status bar for more error detail"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.05}
+
+<HomePage>:
+    name: "home"
+    statusLabel : status
+    macDisplay: mac
+
+    ScaleButton:
+        pos_hint: {"x": 0.05, "top": 0.97}
+        size_hint: 0.2, 0.05
+        text: "Options"
+        on_release:
+            app.root.current = "sidebar"
+            root.manager.transition.direction = "left"
+    ScaleButton:
+        pos_hint: {"center_x":0.5, "center_y": 0.8 }
+        size_hint: 0.7, 0.2
+        text: "CoronaCatcher (Click to check mac)"
+        on_release:
+            root.calculateMac()
+    ScaleLabel:
+        id: mac
+        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+        size_hint: 0.7, 0.1
+        text: root.actualMac
+    ScaleLabel:
+        pos_hint: {"center_x": 0.5, "center_y": 0.3}
+        size_hint: 0.7, 0.1
+        text: "Your Mac: " + root.selfMacAddress
+    ScaleButton:
+        id: status
+        background_color: root.store.get("homeLabelColor")["value"][0], root.store.get("homeLabelColor")["value"][1], root.store.get("homeLabelColor")["value"][2], root.store.get("homeLabelColor")["value"][3]
+        pos_hint: {"center_x": 0.5, "bottom": 0.3}
+        text: root.store.get("homeLabel")["value"]
+        size_hint: 1, 0.1
+
+
+
+
+
+<SideBarPage>:
+    name: "sidebar"
+    GridLayout:
+        cols: 1
+
+
+        ScaleButton:
+            text: "Home"
+            on_release:
+                app.root.current = "home"
+                root.manager.transition.direction = "right"
+
+        ScaleButton:
+            text: "About Us"
+            on_release:
+                app.root.current = "aboutus"
+                root.manager.transition.direction = "left"
+
+        ScaleButton:
+            text: "My MAC Addresses"
+            on_release:
+                app.root.current = "seedata"
+                root.manager.transition.direction = "left"
+
+        ScaleButton:
+            text: "Delete Data & Quit"
+            on_release:
+                app.root.current = "quitapp"
+                root.manager.transition.direction = "left"
+
+        ScaleButton:
+            text: "I'm Infected"
+            on_release:
+                app.root.current = "senddata"
+                root.manager.transition.direction = "left"
+
+
+
+
+<AboutUsPage>:
+    name: "aboutus"
+
+    ScaleButton:
+        pos_hint: {"x": 0.05, "top": 0.97}
+        size_hint: 0.2, 0.05
+        text: "Options"
+        on_release:
+            app.root.current = "sidebar"
+            root.manager.transition.direction = "right"
+    ScaleLabel:
+        pos_hint: {"center_x": 0.5, "center_y": 0.8}
+        size_hint: 0.4, 0.1
+        text: "Our Team"
+
+    ScaleLabel:
+        pos_hint: {"center_x": 0.5, "center_y": 0.7}
+        size_hint: 0.4, 0.8
+        text: "We are a team of cool students :/"
+        outline_color : 100, 0, 0
+
+
+
+
+
+<QuitAppPage>:
+    name: "quitapp"
+    statusLabel : status
+    ScaleButton:
+        pos_hint: {"x": 0.05, "top": 0.97}
+        size_hint: 0.2, 0.05
+        text: "Options"
+        on_release:
+            root.clearCounter()
+            app.root.current = "sidebar"
+            root.manager.transition.direction = "right"
+
+
+
+    ScaleButton:
+        pos_hint: {"center_x": 0.5, "center_y": 0.7}
+        size_hint: 0.7, 0.12
+        text: "Delete Data"
+        on_release:
+            root.deleteDataAndQuitButtonClicked()
+    ScaleButton:
+        id: status
+        background_color: root.store.get("quitAppLabelColor")["value"][0], root.store.get("quitAppLabelColor")["value"][1], root.store.get("quitAppLabelColor")["value"][2], root.store.get("quitAppLabelColor")["value"][3]
+        pos_hint: {"center_x": 0.5, "bottom": 0}
+        text: root.store.get("quitAppLabel")["value"]
+        size_hint: 1, 0.1
+
+
+
+
+<SendDataPage>:
+    name: "senddata"
+    statusLabel : status
+    ScaleButton:
+        pos_hint: {"x": 0.05, "top": 0.97}
+        size_hint: 0.2, 0.05
+        text: "Options"
+        on_release:
+            root.clearCounter()
+            app.root.current = "sidebar"
+            root.manager.transition.direction = "right"
+
+    ScaleButton:
+        pos_hint: {"center_x": 0.5, "center_y": 0.7}
+        size_hint: 0.7, 0.12
+        text: "I'm Infected"
+        on_release:
+            root.imInfectedButtonClicked()
+    ScaleButton:
+        pos_hint: {"center_x": 0.5, "center_y": 0.55}
+        size_hint: 0.7, 0.12
+        text: "I just recovered"
+        on_release:
+            root.iJustRecoveredButtonClicked()
+    ScaleButton:
+        id: status
+        background_color: root.store.get("sendDataLabelColor")["value"][0], root.store.get("sendDataLabelColor")["value"][1], root.store.get("sendDataLabelColor")["value"][2], root.store.get("sendDataLabelColor")["value"][3]
+        pos_hint: {"center_x": 0.5, "bottom": 0}
+        text: root.store.get("sendDataLabel")["value"]
+        size_hint: 1, 0.1
+    
+
+
+
+<SeeDataPage>:
+    name: "seedata"
+    displayTen: display
+    ScaleLabel:
+        pos_hint: {"center_x": 0.5, "center_y": 0.9}
+        size_hint: 0.7, 0.12
+        text: "Recent Ten Mac Addresses Recorded"
+    ScaleLabel:
+        id: display
+        pos_hint: {"center_x": 0.5, "center_y": 0.45}
+        size_hint: 0.7, 0.8
+        text: root.convertRecentTenToStr()
+    ScaleButton:
+        pos_hint: {"x": 0.05, "top": 0.97}
+        size_hint: 0.2, 0.05
+        text: "Options"
+        on_release:
+            app.root.current = "sidebar"
+            root.manager.transition.direction = "right"
+
+    ScaleButton:
+        pos_hint: {"right": 0.95, "top": 0.97}
+        size_hint: 0.2, 0.05
+        text: "Renew"
+        on_release:
+            root.renewRecentTen()
+'''
+
+
+kv = Builder.load_string(kivyFile)
+
 
 class MyMainApp(App):
     def build(self):
