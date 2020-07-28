@@ -13,12 +13,10 @@ from kivy.clock import Clock
 from kivy.config import Config
 from kivy.uix.popup import Popup
 from kivy.uix.floatlayout import FloatLayout
-
-
 #Changes the window size
-from kivy.core.window import Window
-import kivy.metrics
-Window.size = (kivy.metrics.mm(72.3), kivy.metrics.mm(157.8)) #Height, Width
+#from kivy.core.window import Window
+#import kivy.metrics
+#Window.size = (kivy.metrics.mm(72.3), kivy.metrics.mm(157.8)) #Height, Width
 #MAC
 import subprocess
 import os
@@ -44,8 +42,9 @@ if platform != 'android':
     else:
         raise OSError
 else:
-    this.appPath = os.path.dirname(__file__)
-    
+    from android.permissions import request_permissions, Permission
+    request_permissions([Permission.INTERNET])
+    this.appPath = ""
 #Logging settings
 this.versionNumber = '1.0.0'
 this.logVerbosity = 20
@@ -65,30 +64,36 @@ elif this.logVerbosity == 50:
     this.log_level = "critical"
 else:
     kivy.config.log_level = "trace"
-
-
 Config.set('kivy', 'log_level', this.log_level)
-Config.set('kivy', 'log_dir', this.appPath)
+if this.appPath == "":
+    Config.set('kivy', 'log_dir', this.appPath)
 Config.set('kivy', 'log_name', "CovidContactTracerGUI_%y-%m-%d_%_.log")
 Config.set('kivy', 'log_maxfiles', 49)
 Config.write()
-
 #Reference / Creates JSON file in .CovidContactTracer
-this.store = JsonStore(this.appPath + os.sep + this.storeName + '.json')
+if this.appPath != "":
+    this.store = JsonStore(this.appPath + os.sep + this.storeName + '.json')
+else:
+    this.store = JsonStore('local.json')
+
 
 #Method that checks internet connection. Returns False if no internet
 def isInternet():
     try:
         urlopen("https://www.bing.com", timeout = 3)
+        Logger.info("Internet connection acheived")
         return True
     except urllib.error.URLError as Error:
-        Logger.error(Error)
+        Logger.warn(Error)
         return False
 
-#Memory storage class for when the app is running. 
+#Memory storage class for when the app is running.
 class storageUnit():
+
+
     def __init__(self):
         Logger.info('creating an instance of storageUnit')
+
 
     #Adds a unknown / new mac address that was not on the previous network into the json file
     def addEntry(self, macAddress, time):
@@ -120,7 +125,8 @@ class storageUnit():
             tempNewRecentTen = 0
 
             Logger.info('addEntry added ' + macAddress + ' met at '+time)
-    
+
+
     #Checks if the previous prevNetwork is the same as foreignSet, which is a set
     def isSamePrevNetwork(self, foreignSet):
         returnArr = []
@@ -129,6 +135,7 @@ class storageUnit():
                 returnArr += [i]
         Logger.info('isSamePrevNetwork filtered ' + repr(foreignSet) + ' into ' + repr(returnArr))
         return returnArr
+
 
 #Class that collects Mac Addresses
 class GetMacAdd():
@@ -145,6 +152,7 @@ class GetMacAdd():
             returnStr += repr(i)+ "\n"
         Logger.info('getString returned ' + repr(returnStr) + ' from input ' + repr(recentTen))
         return returnStr
+
 
     #Gets own self device mac address
     def getMacSelf(self):
@@ -180,6 +188,7 @@ class GetMacAdd():
             Logger.info('getMacSelf returned ' + str(selfMac))
             return selfMac
 
+
     #Method that attempts to arp the mac address. If not, logger records a critical message
     def tryGetMac(self):
         Logger.debug("We have entered tryGetMac")
@@ -197,18 +206,22 @@ class GetMacAdd():
         else:
             fails = fails + 1
             Logger.warning("read /proc/net/arp failed")
-        try:
-            result = subprocess.run(['arp', '-a'], stdout=subprocess.PIPE)
-            self.supported = True #  Documents whether our mac address collection method is supported
-            Logger.info('tryGetMac: executed arp -a successfully and got ' + repr(result))
-            return result
-        except subprocess.CalledProcessError:
+        if platform != 'android':
+            try:
+                result = subprocess.run(['arp', '-a'], stdout=subprocess.PIPE)
+                self.supported = True #  Documents whether our mac address collection method is supported
+                Logger.info('tryGetMac: executed arp -a successfully and got ' + repr(result))
+                return result
+            except subprocess.CalledProcessError:
+                fails = fails + 1
+                Logger.warning("arp -a failed")
+                pass
+        else:
             fails = fails + 1
-            Logger.warning("arp -a failed")
-            pass
         self.supported = False #  Documents whether our mac address collection method is supported
         Logger.critical('tryGetMac: all MAC address scanning methods failed')
         return ""
+
 
     #Method that gets the mac address. Returns the previous (current) network mac address
     def getMac(self):
@@ -249,16 +262,18 @@ class GetMacAdd():
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
             return self.getString(this.store.get("prevNetwork")["value"])
 
+
 #Class that defines the error popup page
 def showError():
     show = ErrorPopup()
     popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65))
     popupWindow.open()
-    
+
+
 #Class that formats the error popup page
 class ErrorPopup(Screen, FloatLayout):
     pass
-    
+
 
 #Class for the homepage screen
 class HomePage(Screen, Widget):
@@ -278,7 +293,6 @@ class HomePage(Screen, Widget):
         self.statusLabel = ObjectProperty(None)
         #Variable that stores what the mac addresses are printed on. This is just initialization
         self.macDisplay = ObjectProperty(None)
-        
         #If this is a new user
         if (not this.store.exists('numEntries')):
             #First initiates everything within the json file
@@ -299,7 +313,6 @@ class HomePage(Screen, Widget):
             Logger.info('Self Mac Address set to ' + self.macClass.getMacSelf()[0])
             #Stores the personal mac address in the JSON file
             this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
-            
             #First checks for internet
             if (not isInternet()):
                 this.store.put("homeLabel", value = "Status: Unable to connect to internet. Please check wifi connection")
@@ -346,18 +359,35 @@ class HomePage(Screen, Widget):
             self.selfMacAddress = ""
             self.actualMac = ""
             showError()
-
-    #The line of code that calls the function runTimeFunction every 20 ticks
+        #The line of code that calls the function runTimeFunction every 20 ticks
         Clock.schedule_interval(self.runTimeFunction, 20)
-    
+        Clock.schedule_interval(self.runTimeFunctionLong, 3600)
+
+
     #This function records the MAC addresses of devices on the network every 20 ticks
     def runTimeFunction(self, deltaT):
         self.macClass.getMac()
 
+
+    def runTimeFunctionLong(self, deltaT):
+        self.selfMacAddress = self.store.get("selfMac")["value"]
+        #Stores the actual mac addresses that we get from getMac into class instance variable actualMac
+        #This is used to display the network mac addresses the first time users ppen the app
+        self.actualMac = self.macClass.getMac()
+        cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
+        macDict = this.store.get("macDict")["value"]
+        for mac in macDict.keys():
+            strTime = macDict[mac]
+            dateSeen = datetime.datetime.strptime(strTime, '%Y-%m-%d_%H:%M:%S')
+            if dateSeen < cutoff:
+                del macDict[mac]
+        this.store.put("macDict", value = macDict)
+        del macDict
+
+
     #This function sends selfMacAddress to the server and stores the reply in the statusLabel variable in JSON
     def coronaCatcherButtonClicked(self):
         Logger.info('coronaCatcherButtonClicked ')
-        
         if "LastQueryTime" in this.store:
             lastAccess = this.store.get("LastQueryTime")['value']
             lastAccess = datetime.datetime.strptime(lastAccess, '%Y-%m-%d_%H:%M:%S.%f')
