@@ -31,16 +31,10 @@ import re
 import client
 #network interfaces
 import netifaces
-#Using a for loop to continue requests if the request failed
-#Status bar change color if there is an error
-
-#Change background color
-
 import urllib
 from urllib.request import urlopen
 
-#Check if there is internet connection
-#Make sure to make selfMac a csv string of mac addressses
+#Creates a .CovidContactTracer directory to store logs and local files
 this = sys.modules[__name__]
 if platform != 'android':
     if os.path.isdir(Path.home()):
@@ -51,6 +45,8 @@ if platform != 'android':
         raise OSError
 else:
     this.appPath = os.path.dirname(__file__)
+    
+#Logging settings
 this.versionNumber = '1.0.0'
 this.logVerbosity = 20
 this.storeName = 'local'
@@ -76,27 +72,27 @@ Config.set('kivy', 'log_dir', this.appPath)
 Config.set('kivy', 'log_name', "CovidContactTracerGUI_%y-%m-%d_%_.log")
 Config.set('kivy', 'log_maxfiles', 49)
 Config.write()
-#Manages all permanent storage and adding into the JSON file
+
+#Reference / Creates JSON file in .CovidContactTracer
 this.store = JsonStore(this.appPath + os.sep + this.storeName + '.json')
 
-#Method that checks internet connection
+#Method that checks internet connection. Returns False if no internet
 def isInternet():
     try:
-        urlopen("https://www.bing.com", timeout = 2)
+        urlopen("https://www.bing.com", timeout = 3)
         return True
     except urllib.error.URLError as Error:
         Logger.error(Error)
         return False
 
+#Memory storage class for when the app is running. 
 class storageUnit():
-
     def __init__(self):
         Logger.info('creating an instance of storageUnit')
 
-#Adds a unknown / new mac address that was not on the previous network into the json file
+    #Adds a unknown / new mac address that was not on the previous network into the json file
     def addEntry(self, macAddress, time):
         if macAddress in this.store.get("macDict")["value"]:
-            #this.store.get("macDict")["value"][macAddress] += [time]#HEREEEee
             tempNewMacDict = this.store.get("macDict")["value"]
             tempNewMacDict[macAddress] = time
             this.store.put("macDict", value = tempNewMacDict)
@@ -124,7 +120,8 @@ class storageUnit():
             tempNewRecentTen = 0
 
             Logger.info('addEntry added ' + macAddress + ' met at '+time)
-#Checks if the previous prevNetwork is the same as foreignSet, which is a set
+    
+    #Checks if the previous prevNetwork is the same as foreignSet, which is a set
     def isSamePrevNetwork(self, foreignSet):
         returnArr = []
         for i in foreignSet:
@@ -133,16 +130,15 @@ class storageUnit():
         Logger.info('isSamePrevNetwork filtered ' + repr(foreignSet) + ' into ' + repr(returnArr))
         return returnArr
 
-#This entire class is meant for macAddress collection
+#Class that collects Mac Addresses
 class GetMacAdd():
     def __init__(self, **kwargs):
-        #super(HomePage, self).__init__(**kwargs)
         self.storage = storageUnit()
 
         self.supported = None  #  Documents whether our mac address collection method is supported
         Logger.info('creating an instance of GetMacAdd')
 
-
+    #Function that converts the recentTen list to a string (For storage in JSON)
     def getString(self, recentTen):
         returnStr = ""
         for i in recentTen:
@@ -150,7 +146,7 @@ class GetMacAdd():
         Logger.info('getString returned ' + repr(returnStr) + ' from input ' + repr(recentTen))
         return returnStr
 
-#Gets my own self mac address
+    #Gets own self device mac address
     def getMacSelf(self):
         selfMac = []
         isContractionStart = re.compile(r'^([\da-fA-F]):')
@@ -184,7 +180,7 @@ class GetMacAdd():
             Logger.info('getMacSelf returned ' + str(selfMac))
             return selfMac
 
-#Attempts to arp the mac address. If not, logger records a critical message
+    #Method that attempts to arp the mac address. If not, logger records a critical message
     def tryGetMac(self):
         Logger.debug("We have entered tryGetMac")
         fails = 0
@@ -214,7 +210,7 @@ class GetMacAdd():
         Logger.critical('tryGetMac: all MAC address scanning methods failed')
         return ""
 
-#Gets the mac address. Returns the previous (current) network mac address
+    #Method that gets the mac address. Returns the previous (current) network mac address
     def getMac(self):
         macInitStr = self.tryGetMac()
         Logger.debug("We have entered getMac")
@@ -240,62 +236,26 @@ class GetMacAdd():
 
         Logger.debug('getMac: filtered into ' + repr(macList))
 
-#macList is the list of mac addresses that was returned by the arp-a
+        #macList is the list of mac addresses that was returned by the arp-a
         compareSet = set(macList)
         diffArr = self.storage.isSamePrevNetwork(compareSet)
         if len(diffArr) == 0:
             Logger.debug('getMac: No new MAC Addr found')
             return self.getString(this.store.get("prevNetwork")["value"])
         else:
-#Appends on a new mac address if it does not exist
+            #Appends on a new mac address if it does not exist
             for macAdd in diffArr:
                 self.storage.addEntry(macAdd, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
             return self.getString(this.store.get("prevNetwork")["value"])
 
-#A method used for testing. Same as getMac, but adds on a new mac to test
-    def testGetMac(self):
-        macInitStr = self.tryGetMac()
-        macInitStr = repr(macInitStr)
-        Logger.debug('getMac: recieved ' + macInitStr)
-        isMacAddr = re.compile(r"([\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2})")
-        shortMacList = re.findall(isMacAddr,macInitStr)
-        isContractionStart = re.compile(r'^([\da-fA-F]):')
-        isContractionMid = re.compile(r':([\da-fA-F]):')
-        isContractionEnd = re.compile(r':([\da-fA-F])$')
-        macList = []
-        for mac in shortMacList:
-            if re.search(isContractionStart,mac) is not None:
-                digit = re.search(isContractionStart,mac).group(1)
-                mac = re.sub(isContractionStart,digit + "0:",mac)
-            if re.search(isContractionEnd,mac) is not None:
-                digit = re.search(isContractionEnd,mac).group(1)
-                mac = re.sub(isContractionEnd,":" + digit + "0",mac)
-            while re.search(isContractionMid,mac) is not None:
-                digit = re.search(isContractionMid,mac).group(1)
-                mac = re.sub(isContractionMid,":" + digit + "0:",mac)
-            macList.append(mac)
-
-        Logger.debug('getMac: filtered into ' + repr(macList))
-        macList += ["44:44:44:44:44:44"]
-        compareSet = set(macList)
-        diffArr = self.storage.isSamePrevNetwork(compareSet)
-        if len(diffArr) == 0:
-            Logger.debug('getMac: No new MAC Addr found')
-            return self.getString(this.store.get("recentTen")["value"])
-        else:
-            for macAdd in diffArr:
-                self.storage.addEntry(macAdd, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
-            this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
-            return self.getString(this.store.get("recentTen")["value"])
-
-
+#Class that defines the error popup page
 def showError():
     show = ErrorPopup()
     popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65))
     popupWindow.open()
     
-
+#Class that formats the error popup page
 class ErrorPopup(Screen, FloatLayout):
     pass
     
@@ -304,32 +264,28 @@ class ErrorPopup(Screen, FloatLayout):
 class HomePage(Screen, Widget):
     def __init__(self, **kwargs):
         super(HomePage, self).__init__(**kwargs)
-        
         #Store for all the permanent storage
         self.store = this.store
-        #variable used to reference the getMac class
+        #variable used to reference the getMac class to arp for surrounding MAC addresses
         self.macClass = GetMacAdd()
         #Variable used to record your own personal macAddress
         self.selfMacAddress = self.macClass.getMacSelf()[0]
         Logger.info('creating an instance of HomePage')
-#Determines if the server initiation is correct (should only be a one time thing)
+        #Determines if the server initiation is correct (should only be a one time boolean)
         isSuccessful = True
         client.init(this.appPath, this.logVerbosity)
-        #self.macClass = GetMacAdd()
-#Checks if there is a file. If there is not, initiate all 4 necessary parts
-
         #Variable that stores what the status is for the user. This is just initialization
         self.statusLabel = ObjectProperty(None)
         #Variable that stores what the mac addresses are printed on. This is just initialization
         self.macDisplay = ObjectProperty(None)
-#If this is a new user
+        
+        #If this is a new user
         if (not this.store.exists('numEntries')):
             #First initiates everything within the json file
             this.store.put("numEntries", value = 0)
             this.store.put("macDict", value = dict())
             this.store.put("recentTen", value = list())
             this.store.put("prevNetwork", value = dict())
-#                self.statusLabel.text = "Status: Account Registered"
             this.store.put("homeLabel", value = "Status: Account Registered")
             this.store.put("quitAppLabel", value = "Status: Click to delete all data")
             this.store.put("sendDataLabel", value = "Status: Click to report infected")
@@ -340,14 +296,15 @@ class HomePage(Screen, Widget):
             #Sets the secretCode to be empty screen
             Logger.info('Secret Key set to ' + 'empty string')
             this.store.put("secretKey", value = '')
-            #this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
             Logger.info('Self Mac Address set to ' + self.macClass.getMacSelf()[0])
-            #Stores the personal mac address in the JSOn file
+            #Stores the personal mac address in the JSON file
             this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
-            #Stores the returned secret key in tempSecret
+            
+            #First checks for internet
             if (not isInternet()):
                 this.store.put("homeLabel", value = "Status: Unable to connect to internet. Please check wifi connection")
                 isSuccessful = False
+            #Stores the returned secret key in tempSecret if internet found
             else:
                 tempSecret = client.initSelf(this.store.get("selfMac")["value"])
                 if type(tempSecret) == str:
@@ -359,7 +316,7 @@ class HomePage(Screen, Widget):
                     this.store.put("homeLabel", value = "Status: Server Error, Please quit the app and try again (2)")
                     isSuccessful = False
                 elif (tempSecret == 3):
-                    this.store.put("homeLabel", value = "Status: User already initiated (3)")
+                    this.store.put("homeLabel", value = "Status: User already initiated. Please quit the app and try again (3)")
                     isSuccessful = False
                 elif (tempSecret == 4):
                     this.store.put("homeLabel", value = "Status: Invalid Mac Address, Please quit the app and try again (4)")
@@ -367,14 +324,13 @@ class HomePage(Screen, Widget):
                 else:
                     this.store.put("homeLabel", value = "Status: Unknown error occurred. Please restart the app. If this persists, please contact developers. ")
                     isSuccessful = False
+        #If initialization or permanant storage found and successful
         if (isSuccessful):
-#macClass variable is just used as a reference to be able to call the getMac class
-            #Stores self mac address in selfMacAddress
-            self.selfMacAddress = self.store.get("selfMac")["value"] #Assumes the first mac address is self mac address
-            #Stores the actual mac addresses that we get from getMac into actualMac. This is used to display the network mac addresses the first time users
-            #Open the app
+            #Stores self mac address in selfMacAddress class variable
+            self.selfMacAddress = self.store.get("selfMac")["value"]
+            #Stores the actual mac addresses that we get from getMac into class instance variable actualMac
+            #This is used to display the network mac addresses the first time users ppen the app
             self.actualMac = self.macClass.getMac()
-            #self.actualmac = self.calculateMac()
             cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
             macDict = this.store.get("macDict")["value"]
             for mac in macDict.keys():
@@ -384,20 +340,21 @@ class HomePage(Screen, Widget):
                     del macDict[mac]
             this.store.put("macDict", value = macDict)
             del macDict
+        #This should at least guarantee the gui to run but set everything to empty.
         else:
             this.store.put("homeLabelColor", value = [1, 0, 0, 1])
-            #This should at least guarantee the gui to run but set everything to empty.
             self.selfMacAddress = ""
             self.actualMac = ""
             showError()
 
     #The line of code that calls the function runTimeFunction every 20 ticks
         Clock.schedule_interval(self.runTimeFunction, 20)
-
+    
+    #This function records the MAC addresses of devices on the network every 20 ticks
     def runTimeFunction(self, deltaT):
         self.macClass.getMac()
 
-
+    #This function sends selfMacAddress to the server and stores the reply in the statusLabel variable in JSON
     def coronaCatcherButtonClicked(self):
         Logger.info('coronaCatcherButtonClicked ')
         
@@ -441,14 +398,14 @@ class HomePage(Screen, Widget):
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
                 elif (returnVal == 3):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, you're kinda screwed (3)"
-                    this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, you're kinda screwed (3)")
+                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, please quit the app and retry (3)"
+                    this.store.put("Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, please quit the app and retry (3)")
                     this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
                 elif (returnVal == 4):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, you're kinda screwed (4)"
-                    this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, you're kinda screwed (4)")
+                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, Please quit the app and try again (4)"
+                    this.store.put("Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, Please quit the app and try again (4)")
                     this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
@@ -459,28 +416,20 @@ class HomePage(Screen, Widget):
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
                 else:
-                    self.statusLabel.text = "1 returned"
-                    this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 returned")
+                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nUnknown error occurred. Please restart the app. If this persists, please contact developers"
+                    this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nUnknown error occurred. Please restart the app. If this persists, please contact developers")
                     this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
+        #Requested to server within 8 hour timeframe
         else:
             self.statusLabel.text = "Please only check once every 8 hours. Feel free \nto return at " + str(allowedTime)
             this.store.put("homeLabel", value = "Please only check once every 8 hours. Feel free \nto return at " + str(allowedTime))
             this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
             self.statusLabel.background_color = (1, 0.6, 0, 1)
             showError()
-    '''
-    #This test function is used to mimic adding a new mac to the batch
-    def testFunction(self): #Delete kivy line 75 - 79
-        showError()
-        #actualMac is the variable that stores the current network after arp-a again
-        self.actualMac = self.macClass.testGetMac()
-        #This changes the displayed text into the current network by formatting it with the getString method in the macClass
-        self.macDisplay.text = self.macClass.getString(self.store.get("prevNetwork")["value"])
-        return self.actualMac
-    '''
-#This method is used when we click the button to check our current network mac and confirm with the server
+
+    #This method is used when we click the button to check our current network mac and confirm with the server
     def calculateMac(self):
         #actualMac is the variable that stores the current network after arp-a again
         self.actualMac = self.macClass.getMac()
@@ -512,6 +461,7 @@ class QuitAppPage(Screen):
     #Clears the counter when the user hits "back"
     def clearCounter(self):
         self.quitCount = 0;
+    #This method runs when the deleteDataAndQuit button is clicked
     def deleteDataAndQuitButtonClicked(self):
         Logger.info('Delete data and quit clicked')
         self.quitCount += 1
@@ -548,8 +498,8 @@ class QuitAppPage(Screen):
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
                 elif (returnValue == 1):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 is returned (1)"
-                    this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 is returned (1)")
+                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nUnknown error occurred. Please restart the app. If this persists, please contact developers"
+                    this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nUnknown error occurred. Please restart the app. If this persists, please contact developers")
                     this.store.put("quitAppLabelColor", value = [1, 0.6, 0, 1])
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
@@ -564,14 +514,14 @@ class QuitAppPage(Screen):
 #SendData class page (reference my.kv file)
 class SendDataPage(Screen):
     def __init__(self, **kwargs):
+        super(SendDataPage, self).__init__(**kwargs)
         self.store = this.store
         #Used to store number of clicks
         self.infectedCount = 0
         self.recoveredCount = 0
-        super(SendDataPage, self).__init__(**kwargs)
         Logger.info('creating an instance of SendDataPage')
-
         self.statusLabel = ObjectProperty(None)
+    #Convers a dictionary to a string used for permanent storage and sending to server
     def getCSVString(self):
         returnStr = this.store.get("selfMac")["value"] + ","
         macDictionary = this.store.get("macDict")["value"]
@@ -582,6 +532,7 @@ class SendDataPage(Screen):
     def clearCounter(self):
         self.infectedCount = 0
         self.recoveredCount = 0
+    #This method is called when the ImInfected button is clicked
     def imInfectedButtonClicked(self):
         Logger.info('imInfected button clicked')
         self.infectedCount += 1
@@ -619,7 +570,7 @@ class SendDataPage(Screen):
                     this.store.put("sendDataLabelColor", value = [0, 1, 0, 1])
                     self.statusLabel.background_color = (0, 1, 0, 1)
                     this.store.put("isInfected", value = True)
-
+    #This method is called when the iJustRecovered button is clicked
     def iJustRecoveredButtonClicked(self):
         Logger.info('iJustRecovered button clicked')
         self.recoveredCount += 1
@@ -663,47 +614,36 @@ class SendDataPage(Screen):
                     this.store.put("sendDataLabelColor", value = [0, 1, 0, 1])
                     self.statusLabel.background_color = (0, 1, 0, 1)
 
-    pass
-
 #SeeDataPage class page (reference my.kv file)
 class SeeDataPage(Screen):
     def __init__(self, **kwargs):
         super(SeeDataPage, self).__init__(**kwargs)
         Logger.info('creating an instance of SeeDataPage')
         self.store = this.store
-
-#Stores the recentTen aspect of the json file, used for the first initiation of the user
+        #Stores the recentTen aspect of the json file, used for the first initiation of the user
         self.recentTen = this.store.get("recentTen")["value"]
-
         #This variable references the label within the page (used for potentially changing the top10 by renewing)
         self.displayTen = ObjectProperty(None)
-
-
         Logger.info("BEFORE ASSIGN VALUES")
 
-
-#This method changes the self.data so that it reflects the new recentTen
+    #This method changes the self.data so that it reflects the new recentTen
     def renewRecentTen(self):
         Logger.info('Renew Recent Ten button clicked')
         self.recentTen = this.store.get("recentTen")["value"]
         self.displayTen.text = self.convertRecentTenToStr()
 
-
+    #This method converts the recentTen class variable to a string
     def convertRecentTenToStr(self):
         returnStr = ""
         for pair in self.recentTen:
             returnStr += "Time: " + pair[0] + " - Mac: " + pair[1] + "\n\n\n"
         return returnStr
 
-
-
-
-
-
 #Represent the transitions between the windows above
 class WindowManager(ScreenManager):
     pass
 
+#Kivy file used for formatting
 kivyFile = '''
 WindowManager:
     HomePage:
@@ -748,8 +688,6 @@ WindowManager:
 			size: self.texture_size
 			pos: int(self.center_x - self.texture_size[0] / 2.), int(self.center_y - self.texture_size[1] / 2.)
 		PopMatrix
-
-
 
 <ErrorPopup>:
     ScaleLabel:
@@ -799,10 +737,6 @@ WindowManager:
         text: root.store.get("homeLabel")["value"]
         size_hint: 1, 0.1
 
-
-
-
-
 <SideBarPage>:
     name: "sidebar"
     GridLayout:
@@ -839,9 +773,6 @@ WindowManager:
                 app.root.current = "senddata"
                 root.manager.transition.direction = "left"
 
-
-
-
 <AboutUsPage>:
     name: "aboutus"
 
@@ -863,10 +794,6 @@ WindowManager:
         text: "We are a team of cool students :/"
         outline_color : 100, 0, 0
 
-
-
-
-
 <QuitAppPage>:
     name: "quitapp"
     statusLabel : status
@@ -878,9 +805,6 @@ WindowManager:
             root.clearCounter()
             app.root.current = "sidebar"
             root.manager.transition.direction = "right"
-
-
-
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.7}
         size_hint: 0.7, 0.12
@@ -894,9 +818,6 @@ WindowManager:
         text: root.store.get("quitAppLabel")["value"]
         size_hint: 1, 0.1
 
-
-
-
 <SendDataPage>:
     name: "senddata"
     statusLabel : status
@@ -908,7 +829,6 @@ WindowManager:
             root.clearCounter()
             app.root.current = "sidebar"
             root.manager.transition.direction = "right"
-
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.7}
         size_hint: 0.7, 0.12
@@ -927,9 +847,6 @@ WindowManager:
         pos_hint: {"center_x": 0.5, "bottom": 0}
         text: root.store.get("sendDataLabel")["value"]
         size_hint: 1, 0.1
-    
-
-
 
 <SeeDataPage>:
     name: "seedata"
@@ -959,21 +876,15 @@ WindowManager:
             root.renewRecentTen()
 '''
 
-
+#Loads the above kivy string into the builder
 kv = Builder.load_string(kivyFile)
 
-
+#Class that builds the entire app
 class MyMainApp(App):
     def build(self):
-#        store = JsonStore(this.storeName + '.json')
-#        if (not store.exists('numEntries')):
-#            store.put("numEntries", value = 0)
-#            store.put("macDict", value = dict())
-#            store.put("recentTen", value = list())
- #           store.put("prevNetwork", value = dict())
         return kv
 
-
+#Runs the app
 if __name__ == "__main__":
     try:
         Logger.info('App Started')
