@@ -4,40 +4,40 @@
 	- [ ] When COVID-19 passes? Gladly end the project or move on to other pandemics
 	- [ ] Maintenance and Patching? Alerts
 - [ ] 3 Minute Video **(TX)**
-	- [ ] Explain Contact Tracing **IN PROG**
+	- [ ] Explain Contact Tracing **IN PROG** (Draft Jul 28th)
 	- [ ] Explain our app
 	- [ ] Emphasize privacy
-- [ ] Short Article **(RW)**
-- [ ] Long Article **(RW)**
+- [ ] Short Article **(RW)** (Draft Jul 28th)
+- [ ] Long Article **(RW)** (Draft Jul 28th)
 - [ ] **10 word** discription **(BOTH)**
 - [ ] Production Ready
 	- [ ] Pack the programs for Windows, OS X, Ubuntu
-		- [ ] Ubuntu **(TX)**
-		- [ ] macOS X **(RW)**
-		- [ ] Windows **(RW)**
+		- [x] Ubuntu **(TX)**
+		- [x] macOS X **(RW)** **(TX)**
+		- [ ] Windows **(RW)** (Jul 29th)
 	- [ ] ~~Package for Android~~
 		- [x] Client Refactoring to use Kivy modules **(TX)**
 		- [ ] Resolve other errors upon build **(RW)**
 	- [ ] Cleanup of code
-		- [ ] Remove debugging tests **(RW)**
-		- [ ] Remove print statements **(RW)**
+		- [x] Remove debugging tests **(RW)**
+		- [ ] Remove print statements **(TX)** (Jul 28th)
 	- [x] Releases Page **(TX)**
-	- [ ] Dev Contact Methods **(RW)**
-	- [ ] Android Compatible **(RW)**
+	- [ ] Dev Contact Methods **(Both)** (Jul 29th)
+	- [ ] ~~Android Compatible **(RW)**~~
 	- [x] Confimation via hospitals
 		- [x] Server **(TX)**
 		- [x] Client **(TX)**
 		- [x] GUI **(RW)**
 	- [x] timer based maintenance **(TX)**
-		- [x] ~~List cleanup~~
-		- [x] MAC addr Scanning
-	- [ ] GUI error page **(RW)**
-	- [ ] GUI color, icons, etc **(RW)**
-		- [ ] Hide impossible options
-		- [ ] Ask for user confirmation before irreversible tasks (delete, report)
-		- [ ] Color cues for status
-	- [ ] Improve messages seen by user **(RW)**
-		- [ ] Censorship of cerain terms
-		- [ ] Scrub language
-		- [ ] Improve visibility
+		- [ ] List cleanup **(RW)** (Jul 29th)
+		- [x] MAC addr Scanning 
+	- [x] GUI error page **(RW)**
+	- [x] GUI color, icons, etc **(RW)**
+		- [x] Hide impossible options
+		- [x] Ask for user confirmation before irreversible tasks (delete, report)
+		- [x] Color cues for status
+	- [ ] Improve messages seen by user **(RW)** (Jul 28th)
+		- [ ] Censorship of cerain terms **(RW)** (Jul 28th -ish)
+		- [ ] Improve visibility (Jul 29th)
 	- [x] Server Feature Documentation **(TX)**
+	- [ ] Code Cleanup **(TX)** (Jul 29th)
