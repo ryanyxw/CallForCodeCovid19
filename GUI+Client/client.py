@@ -289,9 +289,10 @@ def freeResources():
     pass
 
 
+
 def testInternetConnection():
-    httpReq("www.bing.com",None,None,30,'GET')
-    if this.code != 500:
+    httpReq(this.__baseURL__ ,None,None,30,'GET')
+    if this.__code__ != 500:
         return True
     else:
         return False
@@ -300,8 +301,13 @@ def testInternetConnection():
 #  test function, do not call
 def tests():
     print("initiating program")
+
     print(init("logFile",10)==False)
     print(init(os.getcwd()+os.sep+"tmp.log",5)==True)
+
+    print("Test Internet Connection")
+    print(testInternetConnection())
+
     self = "FF:11:2E:7A:5B:6A"
     others = "4F:11:2E:7A:5B:6A, 4F:1A:2E:7A:5B:6A, 4F:11:77:7A:5B:6A"
     person2 = "4F:11:2E:7A:5B:6A"
