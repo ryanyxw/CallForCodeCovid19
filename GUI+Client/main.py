@@ -187,7 +187,7 @@ class GetMacAdd():
                 while re.search(isContractionMid,mac) is not None:
                     digit = re.search(isContractionMid,mac).group(1)
                     mac = re.sub(isContractionMid,":" + digit + "0:",mac)
-                if mac != "00:00:00:00:00:00":
+                if mac is not ["00:00:00:00:00:00", '00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00','00:00:00:00']:
                     selfMac.append(mac)
                     Logger.info('getMacSelf:' + mac + ' has been appended to output of function')
             except KeyError:
