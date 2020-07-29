@@ -74,6 +74,11 @@ ccm.init()
 app = flask.Flask(__name__)
 
 
+@app.errorhandler(404)
+def page_not_found(e):
+    strike(ip,mac,secretKey,2)
+    return 404
+
 # Test if user is banned (had 3 strikes) or is committing a bannable offense (SQL injection, admin inpersonation)
 # This is designed to slow down and discourage attackers without affecting users.
 @app.before_request
@@ -420,7 +425,7 @@ def clearCache():
 	if 'key' not in data:
 		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return "Permission Denied",403
-	if data['key'] == creds.resetAuth:
+	if data['key'] == creds.adminPass:
 		ip_ban_list = []
 		mac_ban_list = []
 		key_ban_list = []
@@ -439,7 +444,7 @@ def getCache():
 	if 'key' not in data:
 		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
 		return "Permission Denied",403
-	if data['key'] == creds.resetAuth:
+	if data['key'] == creds.adminPass:
 		caches = "IP: " + repr(ip_ban_list) + ", MAC: " + repr(mac_ban_list) + ", Secrets: " + repr(key_ban_list)
 		return caches, 200
 	else:
