@@ -1,1 +1,4 @@
-pip install kivy pathlib netifaces pycurl json
+kivy
+pathlib
+netifaces
+pycurl
