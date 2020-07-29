@@ -63,7 +63,7 @@ elif this.logVerbosity < 50:
 elif this.logVerbosity == 50:
     this.log_level = "critical"
 else:
-    kivy.config.log_level = "trace"
+    this.log_level = "trace"
 Config.set('kivy', 'log_level', this.log_level)
 if this.appPath == "":
     Config.set('kivy', 'log_dir', this.appPath)

@@ -7,20 +7,24 @@
 	- [ ] Explain Contact Tracing **IN PROG** (Draft Jul 28th)
 	- [ ] Explain our app
 	- [ ] Emphasize privacy
-- [ ] Short Article **(RW)** (Draft Jul 28th)
-- [ ] Long Article **(RW)** (Draft Jul 28th)
+- [ ] Short Article **(RW)**
+	- [x] Draft (Draft Jul 28th)
+	- [ ] 
+- [ ] Long Article **(RW)** 
+	- [x] Draft (Draft Jul 28th)
+	- [ ] 
 - [ ] **10 word** discription **(BOTH)**
 - [ ] Production Ready
 	- [ ] Pack the programs for Windows, OS X, Ubuntu
-		- [x] Ubuntu **(TX)**
-		- [x] macOS X **(RW)** **(TX)**
+		- [ ] Ubuntu **(TX)**
+		- [ ] macOS X **(RW)** **(TX)**
 		- [ ] Windows **(RW)** (Jul 29th)
 	- [ ] ~~Package for Android~~
 		- [x] Client Refactoring to use Kivy modules **(TX)**
 		- [ ] Resolve other errors upon build **(RW)**
-	- [ ] Cleanup of code
+	- [x] Cleanup of code
 		- [x] Remove debugging tests **(RW)**
-		- [ ] Remove print statements **(TX)** (Jul 28th)
+		- [x] Remove print statements **(TX)** (Jul 28th)
 	- [x] Releases Page **(TX)**
 	- [ ] Dev Contact Methods **(Both)** (Jul 29th)
 	- [ ] ~~Android Compatible **(RW)**~~
@@ -29,15 +33,15 @@
 		- [x] Client **(TX)**
 		- [x] GUI **(RW)**
 	- [x] timer based maintenance **(TX)**
-		- [ ] List cleanup **(RW)** (Jul 29th)
+		- [x] List cleanup **(RW)** (Jul 29th)
 		- [x] MAC addr Scanning 
 	- [x] GUI error page **(RW)**
 	- [x] GUI color, icons, etc **(RW)**
 		- [x] Hide impossible options
 		- [x] Ask for user confirmation before irreversible tasks (delete, report)
 		- [x] Color cues for status
-	- [ ] Improve messages seen by user **(RW)** (Jul 28th)
-		- [ ] Censorship of cerain terms **(RW)** (Jul 28th -ish)
-		- [ ] Improve visibility (Jul 29th)
+	- [x] Improve messages seen by user **(RW)** (Jul 28th)
+		- [x] Censorship of cerain terms **(RW)** (Jul 28th -ish)
+		- [x] Improve visibility (Jul 29th)
 	- [x] Server Feature Documentation **(TX)**
-	- [ ] Code Cleanup **(TX)** (Jul 29th)
+	- [x] Code Cleanup **(TX)** (Jul 29th)
