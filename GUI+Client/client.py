@@ -298,7 +298,6 @@ def testInternetConnection():
         return False
 
 
-
 #  test function, do not call
 def tests():
     print("initiating program")

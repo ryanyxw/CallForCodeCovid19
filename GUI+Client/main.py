@@ -79,12 +79,11 @@ else:
 
 #Method that checks internet connection. Returns False if no internet
 def isInternet():
-    try:
-        urlopen("https://www.bing.com", timeout = 3)
+    if client.testInternetConnection():
         Logger.info("Internet connection acheived")
         return True
-    except urllib.error.URLError as Error:
-        Logger.warn(Error)
+    else:
+        Logger.warn("No internet connection to server. ")
         return False
 
 #Memory storage class for when the app is running.
