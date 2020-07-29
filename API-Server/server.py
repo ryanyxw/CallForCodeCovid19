@@ -599,6 +599,11 @@ def pauseServer():
 		return 'Maintenance mode off', 200
 
 
+@app.route('/', methods=["GET"])
+def isHere():
+	return 200
+
+
 @atexit.register
 def shutdown():
 	ccm.cloudantCleanup()
