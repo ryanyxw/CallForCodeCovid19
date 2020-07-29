@@ -7,3 +7,6 @@ API-Server/__pycache__/*.pyc
 .DS_Store
 API-Server/tmp.log
 GUI+Client/.buildozer/**
+GUI+Client/COVID Contact Tracer/**
+GUI+Client/dist/**
+GUI+Client/main.spec
