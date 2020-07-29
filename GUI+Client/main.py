@@ -473,6 +473,23 @@ class SideBarPage(Screen):
 
 #AboutUs class page (reference my.kv file)
 class AboutUsPage(Screen):
+    #Method that returns the about us text including email (sorry we don't want scam emails)
+    def getEm(self):
+        a = "lively"
+        b = 87
+        c = "carpet"
+        d = "@gm"
+        e = "ail.com"
+        firstMail = a + c + str(b) + d +e
+        f = "rya"
+        g = "nyxw"
+        h = 200
+        i = "2@gm"
+        j = "ail.c"
+        k = "om"
+        secondMail = f + g + str(h) + i + j + k
+        first = "Thank you for using our app. This is a Call For Code submission project. We are a group of students based in Shanghai, China. Through this app, we hope to do our part to ending this devastating pandemic. \n\nTo contact us, or if there are any issues, please reach us in the following email address : \n"
+        return first + firstMail + "\n" + secondMail
     pass
 
 #QuitApp class page (reference my.kv file)
@@ -779,7 +796,7 @@ WindowManager:
                 root.manager.transition.direction = "right"
 
         ScaleButton:
-            text: "About Us"
+            text: "About Us / Contact Us"
             on_release:
                 app.root.current = "aboutus"
                 root.manager.transition.direction = "left"
@@ -822,7 +839,7 @@ WindowManager:
         text_size: self.size
         halign: "center"
         valign: "top"
-        text: "Thank you for using our app. This is a Call For Code submission project. We are a group of students based in Shanghai, China. Through this app, we hope to contribute to ending this pandemic. To contact us, please reach us in the following email address : bob@gmail.com"
+        text: root.getEm()
 
 
 <QuitAppPage>:
