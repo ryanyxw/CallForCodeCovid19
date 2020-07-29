@@ -13,8 +13,7 @@ def init(logDir,verbosityLevel):
     this.__code__ = None
     this.__body__ = None
     this.__header__ = headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain", "User-Agent": "COVIDContactTracerApp/1.0"}
-    this.__baseURL__ = "http://covidcontacttracer.ngrok.io/"
-    #this.__baseURL__ = "covidcontacttracer-appreciative-civet-qu.mybluemix.net"
+    this.__baseURL__ = "covidcontacttracer-appreciative-civet-qu.mybluemix.net"
     this.logVerbosity = verbosityLevel
     if this.logVerbosity < 10:
         this.log_level = "trace"
