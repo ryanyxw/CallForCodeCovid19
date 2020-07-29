@@ -2,8 +2,6 @@ from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.widget import Widget
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
 from kivy.properties import ObjectProperty
 from kivy.storage.jsonstore import JsonStore
 from kivy.utils import platform
@@ -29,8 +27,6 @@ import re
 import client
 #network interfaces
 import netifaces
-import urllib
-from urllib.request import urlopen
 
 #Creates a .CovidContactTracer directory to store logs and local files
 this = sys.modules[__name__]
@@ -342,7 +338,7 @@ class HomePage(Screen, Widget):
             self.selfMacAddress = self.store.get("selfMac")["value"]
             #Stores the actual mac addresses that we get from getMac into class instance variable actualMac
             #This is used to display the network mac addresses the first time users ppen the app
-            self.actualMac = self.macClass.getMac()
+            self.actualMac = "MAC On Current Network : \n\n" + self.macClass.getMac()
             cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
             macDict = this.store.get("macDict")["value"]
             for mac in macDict.keys():
@@ -356,7 +352,7 @@ class HomePage(Screen, Widget):
         else:
             this.store.put("homeLabelColor", value = [1, 0, 0, 1])
             self.selfMacAddress = ""
-            self.actualMac = ""
+            self.actualMac = "MAC On Current Network : \n\n" + ""
             showError()
         #The line of code that calls the function runTimeFunction every 20 ticks
         Clock.schedule_interval(self.runTimeFunction, 20)
@@ -372,7 +368,7 @@ class HomePage(Screen, Widget):
         self.selfMacAddress = self.store.get("selfMac")["value"]
         #Stores the actual mac addresses that we get from getMac into class instance variable actualMac
         #This is used to display the network mac addresses the first time users ppen the app
-        self.actualMac = self.macClass.getMac()
+        self.actualMac = "MAC On Current Network : \n\n" + self.macClass.getMac()
         cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
         macDict = this.store.get("macDict")["value"]
         for mac in macDict.keys():
@@ -461,7 +457,7 @@ class HomePage(Screen, Widget):
     #This method is used when we click the button to check our current network mac and confirm with the server
     def calculateMac(self):
         #actualMac is the variable that stores the current network after arp-a again
-        self.actualMac = self.macClass.getMac()
+        self.actualMac = "MAC On Current Network : \n\n" + self.macClass.getMac()
         #This line checks with the server to see if user has already contacted infected individual
         self.coronaCatcherButtonClicked()
         Logger.info('Calculated MAC Addr to be ' + self.actualMac)
@@ -747,24 +743,28 @@ WindowManager:
     ScaleButton:
         pos_hint: {"center_x":0.5, "center_y": 0.8 }
         size_hint: 0.7, 0.2
-        text: "CoronaCatcher (Click to check mac)"
+        text: "Click To Check My Risk"
         on_release:
             root.calculateMac()
-    ScaleLabel:
+    ScaleButton:
         id: mac
-        pos_hint: {"center_x": 0.5, "center_y": 0.5}
-        size_hint: 0.7, 0.1
+        pos_hint: {"center_x": 0.5, "center_y": 0.45}
+        size_hint: 0.7, 0.4
         text: root.actualMac
-    ScaleLabel:
-        pos_hint: {"center_x": 0.5, "center_y": 0.3}
-        size_hint: 0.7, 0.1
+        text_size: self.size
+        halign: "center"
+        valign: "top"
+    ScaleButton:
+        pos_hint: {"center_x": 0.5, "center_y": 0.175}
+        size_hint: 0.7, 0.05
         text: "Your Mac: " + root.selfMacAddress
     ScaleButton:
         id: status
         background_color: root.store.get("homeLabelColor")["value"][0], root.store.get("homeLabelColor")["value"][1], root.store.get("homeLabelColor")["value"][2], root.store.get("homeLabelColor")["value"][3]
-        pos_hint: {"center_x": 0.5, "bottom": 0.3}
+        pos_hint: {"center_x": 0.5, "bottom": 0}
         text: root.store.get("homeLabel")["value"]
         size_hint: 1, 0.1
+    
 
 <SideBarPage>:
     name: "sidebar"
@@ -814,14 +814,16 @@ WindowManager:
             root.manager.transition.direction = "right"
     ScaleLabel:
         pos_hint: {"center_x": 0.5, "center_y": 0.8}
-        size_hint: 0.4, 0.1
+        size_hint: 0.7, 0.1
         text: "Our Team"
+    Label:
+        pos_hint: {"center_x": 0.5, "center_y": 0.375}
+        size_hint: 0.7, 0.6
+        text_size: self.size
+        halign: "center"
+        valign: "top"
+        text: "Thank you for using our app. This is a Call For Code submission project. We are a group of students based in Shanghai, China. Through this app, we hope to contribute to ending this pandemic. To contact us, please reach us in the following email address : bob@gmail.com"
 
-    ScaleLabel:
-        pos_hint: {"center_x": 0.5, "center_y": 0.7}
-        size_hint: 0.4, 0.8
-        text: "We are a team of cool students :/"
-        outline_color : 100, 0, 0
 
 <QuitAppPage>:
     name: "quitapp"
@@ -881,14 +883,18 @@ WindowManager:
     name: "seedata"
     displayTen: display
     ScaleLabel:
-        pos_hint: {"center_x": 0.5, "center_y": 0.9}
-        size_hint: 0.7, 0.12
-        text: "Recent Ten Mac Addresses Recorded"
-    ScaleLabel:
+        pos_hint: {"center_x": 0.5, "center_y": 0.86}
+        size_hint: 0.7, 0.04
+        text: "Recent Added Mac Addresses"
+        background_color: 1, 0, 0, 1
+    ScaleButton:
         id: display
-        pos_hint: {"center_x": 0.5, "center_y": 0.45}
-        size_hint: 0.7, 0.8
+        pos_hint: {"center_x": 0.5, "center_y": 0.4375}
+        size_hint: 0.7, 0.7
         text: root.convertRecentTenToStr()
+        text_size: self.size
+        halign: "center"
+        valign: "top"
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
         size_hint: 0.2, 0.05
