@@ -83,7 +83,7 @@ def isInternet():
         Logger.info("Internet connection acheived")
         return True
     else:
-        Logger.warn(Error)
+        Logger.warn("No internet connection to server. ")
         return False
 
 #Memory storage class for when the app is running.
