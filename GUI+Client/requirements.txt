@@ -1,4 +1,3 @@
 kivy
 pathlib
 netifaces
-pycurl
