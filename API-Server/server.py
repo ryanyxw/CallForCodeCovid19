@@ -74,6 +74,11 @@ ccm.init()
 app = flask.Flask(__name__)
 
 
+@app.errorhandler(404)
+def page_not_found(e):
+    strike(ip,mac,secretKey,2)
+    return 404
+
 # Test if user is banned (had 3 strikes) or is committing a bannable offense (SQL injection, admin inpersonation)
 # This is designed to slow down and discourage attackers without affecting users.
 @app.before_request
