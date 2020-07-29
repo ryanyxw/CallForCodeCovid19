@@ -243,6 +243,7 @@ class GetMacAdd():
         macInitStr = repr(macInitStr)
         Logger.debug('getMac: recieved ' + macInitStr)
         isMacAddr = re.compile(r"([\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2})")
+        isFloodAddr = re.compile("FF:FF:FF:FF:FF:FF",re.I)
         shortMacList = re.findall(isMacAddr,macInitStr)
         isContractionStart = re.compile(r'^([\da-fA-F]):')
         isContractionMid = re.compile(r':([\da-fA-F]):')
@@ -258,7 +259,8 @@ class GetMacAdd():
             while re.search(isContractionMid,mac) is not None:
                 digit = re.search(isContractionMid,mac).group(1)
                 mac = re.sub(isContractionMid,":" + digit + "0:",mac)
-            macList.append(mac)
+            if re.search(isFloodAddr,mac) is None:
+                macList.append(mac)
 
         Logger.debug('getMac: filtered into ' + repr(macList))
 
