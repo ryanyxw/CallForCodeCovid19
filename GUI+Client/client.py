@@ -31,7 +31,7 @@ def init(logDir,verbosityLevel):
     this.__code__ = None
     this.__body__ = None
     this.__header__ = headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain", "User-Agent": "COVIDContactTracerApp/1.0"}
-    this.__baseURL__ = "covidcontacttracer-appreciative-civet-qu.mybluemix.net"
+    this.__baseURL__ = "http://covidcontacttracer.ngrok.io"# "covidcontacttracer-appreciative-civet-qu.mybluemix.net"
     this.logVerbosity = verbosityLevel
     if this.logVerbosity < 10:
         this.log_level = "trace"
@@ -308,7 +308,7 @@ def freeResources():
 
 
 def testInternetConnection():
-    httpReq(this.__baseURL__ ,None,None,10,'GET')
+    httpReq(this.__baseURL__,None,this.__header__,10,'GET')
     if this.__code__ != 500:
         return True
     else:
@@ -320,7 +320,6 @@ def tests():
     print("initiating program")
 
     print(init("logFile",10)==False)
-    print(init(os.getcwd()+os.sep+"tmp.log",5)==True)
 
     print("Test Internet Connection")
     print(testInternetConnection())
