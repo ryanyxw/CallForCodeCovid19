@@ -38,7 +38,7 @@ def init(logDir,verbosityLevel):
     this.__code__ = None
     this.__body__ = None
     this.__header__ = {"Content-type": "application/x-www-form-urlencoded","Accept": "*/*", "User-Agent": "COVIDContactTracerApp/1.0", "Content-Length": 1}
-    this.__baseURL__ = "https://covidcontacttracer-appreciative-civet-qu.mybluemix.net/"
+    this.__baseURL__ = "http://covidcontacttracer-appreciative-civet-qu.mybluemix.net/"
     this.logVerbosity = verbosityLevel
     if this.logVerbosity < 10:
         this.log_level = "trace"
@@ -321,7 +321,7 @@ def forgetUser(MacAddrSelf, secretKey):
 def on_complete(request,req):
     Logger.info("Request Completed")
     this.__completed__ = True
-    Logger.debug(str(type(req)))
+    Logger.info(str(type(req)))
     if str(type(req)) in ["<class 'socket.gaierror'>"]:
         raise NoInternetException
     elif str(type(req)) in ["<class 'socket.timeout'>"]:
