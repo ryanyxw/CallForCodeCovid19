@@ -6,6 +6,7 @@ import json
 import re
 import os
 from kivy.config import Config
+import time
 
 """
 License:
@@ -25,13 +26,19 @@ License:
    limitations under the License.
 """
 
+class NoInternetException(Exception):
+    pass
+class TimeoutException(Exception):
+    pass
+
 this = sys.modules[__name__]
 
 def init(logDir,verbosityLevel):
+    this.__completed__ = False
     this.__code__ = None
     this.__body__ = None
-    this.__header__ = headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain", "User-Agent": "COVIDContactTracerApp/1.0"}
-    this.__baseURL__ = "http://covidcontacttracer.ngrok.io"# "covidcontacttracer-appreciative-civet-qu.mybluemix.net"
+    this.__header__ = {"Content-type": "application/x-www-form-urlencoded","Accept": "*/*", "User-Agent": "COVIDContactTracerApp/1.0", "Content-Length": 1}
+    this.__baseURL__ = "https://covidcontacttracer.ngrok.io/" #"http://covidcontacttracer-appreciative-civet-qu.mybluemix.net"
     this.logVerbosity = verbosityLevel
     if this.logVerbosity < 10:
         this.log_level = "trace"
@@ -73,7 +80,16 @@ def initSelf(MacAddrSelf):
     # Content-Type header to application/x-www-form-urlencoded
     # and data to send in request body.
     Logger.info("initSelf:postfields=" + postfields)
-    httpReq(this.__baseURL__+"InitSelf",postfields,this.__header__,60,"POST")
+    try:
+        httpReq(this.__baseURL__+"InitSelf",postfields,this.__header__,60,"POST")
+    except NoInternetException:
+        return 2
+    except TimeoutException:
+        return 2
+    if this.__code__ != 500:
+        return True
+    else:
+        return False
     code = this.__code__
     if type(code) is not int:
         Logger.error("initSelf:Unknown Error: No response")
@@ -125,7 +141,12 @@ def positiveReport(MacAddrSelf,secretKey,metAddrList):
     # Content-Type header to application/x-www-form-urlencoded
     # and data to send in request body.
     Logger.info("positiveReport:postfields="+postfields)
-    httpReq(this.__baseURL__+'positiveReport',postfields,this.__header__,300,'POST')
+    try:
+        httpReq(this.__baseURL__+'positiveReport',postfields,this.__header__,300,'POST')
+    except NoInternetException:
+        return 2
+    except TimeoutException:
+        return 2
     code = this.__code__
     if type(code) is not int:
         Logger.error("positiveReport:Unknown Error: No response")
@@ -167,7 +188,12 @@ def negativeReport(MacAddrSelf,secretKey):
     # Content-Type header to application/x-www-form-urlencoded
     # and data to send in request body.
     Logger.info("negativeReport:postfields="+postfields)
-    httpReq(this.__baseURL__+'negativeReport',postfields,this.__header__,30,'POST')
+    try:
+        httpReq(this.__baseURL__+'negativeReport',postfields,this.__header__,30,'POST')
+    except NoInternetException:
+        return 2
+    except TimeoutException:
+        return 2
     code = this.__code__
     if type(code) is not int:
         Logger.error("negativeReport:Unknown Error: No response")
@@ -210,7 +236,12 @@ def queryMyMacAddr(self,secret):
     # Content-Type header to application/x-www-form-urlencoded
     # and data to send in request body.
     Logger.debug("QueryMyMacAddr:postfields="+postfields)
-    httpReq(this.__baseURL__+'QueryMyMacAddr',postfields,this.__header__,30,'POST')
+    try:
+        httpReq(this.__baseURL__+'QueryMyMacAddr',postfields,this.__header__,30,'POST')
+    except NoInternetException:
+        return 2
+    except TimeoutException:
+        return 2
     code = this.__code__
     if type(code) is not int:
         Logger.error("QueryMyMacAddr:Unknown Error: No response")
@@ -259,7 +290,12 @@ def forgetUser(MacAddrSelf, secretKey):
     # Sets request method to POST,
     # Content-Type header to application/x-www-form-urlencoded
     # and data to send in request body.
-    httpReq(this.__baseURL__+'ForgetMe',postfields,this.__header__,30,'POST')
+    try:
+        httpReq(this.__baseURL__+'ForgetMe',postfields,this.__header__,30,'POST')
+    except NoInternetException:
+        return 2
+    except TimeoutException:
+        return 2
     code = this.__code__
     if type(code) is not int:
         Logger.error("ForgetMe:Unknown Error: No response")
@@ -286,8 +322,24 @@ def forgetUser(MacAddrSelf, secretKey):
         return 1
 
 
+def on_complete(request,req):
+    Logger.info("Request Completed")
+    this.__completed__ = True
+    Logger.info(str(type(req)))
+    if str(type(req)) in ["<class 'socket.gaierror'>"]:
+        raise NoInternetException
+    elif str(type(req)) in ["<class 'socket.timeout'>"]:
+        raise TimeoutException
+    return None
+
+
 def httpReq(url,body,headers,timeout,method):
-    req = UrlRequest(url, req_body=body,req_headers=headers,timeout=timeout,method=method,debug=False)
+    if body is not None:
+        this.__header__["Content-Length"] = len(body)
+    else:
+        this.__header__["Content-Length"] = 0
+    Logger.info(repr(url) + repr(body) + repr(headers) + repr(timeout) + repr(method))
+    req = UrlRequest(url, req_body=body,req_headers=headers,timeout=timeout,method=method,debug=False,on_success=on_complete,on_error=on_complete,on_redirect=on_complete,on_failure=on_complete)
     req.wait()
     if req.resp_status is not None:
         this.__code__ = req.resp_status
@@ -308,7 +360,12 @@ def freeResources():
 
 
 def testInternetConnection():
-    httpReq(this.__baseURL__,None,this.__header__,10,'GET')
+    try:
+        httpReq(this.__baseURL__+"networkTest","{}",this.__header__,10,'GET')
+    except NoInternetException:
+        return False
+    except TimeoutException:
+        return False
     if this.__code__ != 500:
         return True
     else:
@@ -319,10 +376,13 @@ def testInternetConnection():
 def tests():
     print("initiating program")
 
-    print(init("logFile",10)==False)
+    print(init("logFile",0)==False)
 
     print("Test Internet Connection")
-    print(testInternetConnection())
+    if testInternetConnection():
+        print("True")
+    else:
+        raise OSError
 
     self = "FF:11:2E:7A:5B:6A"
     others = "4F:11:2E:7A:5B:6A, 4F:1A:2E:7A:5B:6A, 4F:11:77:7A:5B:6A"
