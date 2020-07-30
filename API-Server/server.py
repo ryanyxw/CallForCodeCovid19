@@ -18,7 +18,7 @@ Version: 2.2.3
 Features:
 
 1. Security:
- 	1. The server automatically bans anyone who attempts to access the admin
+	1. The server automatically bans anyone who attempts to access the admin
 	section without the correct password by IP for 15 minutes
 	2. Users who repeatedly conduct behaviors that seek to gain illegitimate
 	access, such as SQL injection, password spraying, or spam,
@@ -50,13 +50,31 @@ Features:
 	5. No identifiable information of the user is ever shared with others at any point.
 
 3. Scalability:
- 	1. This server is written in flask and supports multithreading and could easily
+	1. This server is written in flask and supports multithreading and could easily
 	be upscaled without any impact.
 	2. Cloudant database tombstones (leftover records from deletions of user data)
 	could be cleared periodically by setting the server to maintenance mode via
 	the admin api, allowing it to pause service and give admins the opportunity
 	to clear databases with 0 data loss. The server will answer requests with 503
 	(code for Service Temporarily Unavailable), prompting the client to retry shortly.
+"""
+
+"""
+License:
+
+   Copyright 2020 Ryan Wang and Tyllis Xu
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+	   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
 """
 
 # Regular expressions to filter user input
@@ -76,8 +94,11 @@ app = flask.Flask(__name__)
 
 @app.errorhandler(404)
 def page_not_found(e):
-    strike(ip,mac,secretKey,2)
-    return 404
+	ip = request.environ.get('REMOTE_ADDR')
+	if ip == '127.0.0.1' or ip == '0.0.0.0' or ip == '0.0.0.0.0.0':
+		ip = request.environ.get('HTTP_X_REAL_IP')
+	strike(ip,None,None,2)
+	return 404
 
 # Test if user is banned (had 3 strikes) or is committing a bannable offense (SQL injection, admin inpersonation)
 # This is designed to slow down and discourage attackers without affecting users.
@@ -604,9 +625,9 @@ def pauseServer():
 		return 'Maintenance mode off', 200
 
 
-@app.route('/', methods=["GET"])
+@app.route('/networkTest', methods=["GET"])
 def isHere():
-	return 200
+	return "ACK", 200
 
 
 @atexit.register

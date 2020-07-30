@@ -28,6 +28,24 @@ import client
 #network interfaces
 import netifaces
 
+"""
+License:
+
+   Copyright 2020 Ryan Wang and Tyllis Xu
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 #Creates a .CovidContactTracer directory to store logs and local files
 this = sys.modules[__name__]
 if platform != 'android':
@@ -170,7 +188,7 @@ class GetMacAdd():
                 while re.search(isContractionMid,mac) is not None:
                     digit = re.search(isContractionMid,mac).group(1)
                     mac = re.sub(isContractionMid,":" + digit + "0:",mac)
-                if mac != "00:00:00:00:00:00":
+                if mac is not ["00:00:00:00:00:00", '00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00','00:00:00:00']:
                     selfMac.append(mac)
                     Logger.info('getMacSelf:' + mac + ' has been appended to output of function')
             except KeyError:
@@ -226,6 +244,7 @@ class GetMacAdd():
         macInitStr = repr(macInitStr)
         Logger.debug('getMac: recieved ' + macInitStr)
         isMacAddr = re.compile(r"([\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2}:[\da-fA-F]{1,2})")
+        isFloodAddr = re.compile("FF:FF:FF:FF:FF:FF",re.I)
         shortMacList = re.findall(isMacAddr,macInitStr)
         isContractionStart = re.compile(r'^([\da-fA-F]):')
         isContractionMid = re.compile(r':([\da-fA-F]):')
@@ -241,7 +260,8 @@ class GetMacAdd():
             while re.search(isContractionMid,mac) is not None:
                 digit = re.search(isContractionMid,mac).group(1)
                 mac = re.sub(isContractionMid,":" + digit + "0:",mac)
-            macList.append(mac)
+            if re.search(isFloodAddr,mac) is None:
+                macList.append(mac)
 
         Logger.debug('getMac: filtered into ' + repr(macList))
 
@@ -801,7 +821,11 @@ WindowManager:
         pos_hint: {"center_x": 0.5, "bottom": 0}
         text: root.store.get("homeLabel")["value"]
         size_hint: 1, 0.1
-    
+
+<Rule1>
+    runTimeFunction: runTimeFunction.__self__
+    runTimeFunctionLong: runTimeFunctionLong.__self__
+
 
 <SideBarPage>:
     name: "sidebar"
