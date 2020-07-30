@@ -19,6 +19,7 @@ from kivy.uix.floatlayout import FloatLayout
 import subprocess
 import os
 from pathlib import Path
+import time
 import datetime
 import sys
 #Regular Expressions
@@ -27,6 +28,7 @@ import re
 import client
 #network interfaces
 import netifaces
+import threading
 
 """
 License:
@@ -111,6 +113,7 @@ class storageUnit():
 
     #Adds a unknown / new mac address that was not on the previous network into the json file
     def addEntry(self, macAddress, time):
+        clockThread.pauseThread()
         if macAddress in this.store.get("macDict")["value"]:
             tempNewMacDict = this.store.get("macDict")["value"]
             tempNewMacDict[macAddress] = time
@@ -139,6 +142,7 @@ class storageUnit():
             tempNewRecentTen = 0
 
             Logger.info('addEntry added ' + macAddress + ' met at '+time)
+        clockThread.resumeThread()
 
 
     #Checks if the previous prevNetwork is the same as foreignSet, which is a set
@@ -275,7 +279,9 @@ class GetMacAdd():
             #Appends on a new mac address if it does not exist
             for macAdd in diffArr:
                 self.storage.addEntry(macAdd, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
+            clockThread.pauseThread()
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
+            clockThread.resumeThread()
             return self.getString(this.store.get("prevNetwork")["value"])
 
 
@@ -304,6 +310,7 @@ class HomePage(Screen, Widget):
         Logger.info('creating an instance of HomePage')
         #Determines if the server initiation is correct (should only be a one time boolean)
         isSuccessful = True
+
         client.init(this.appPath, this.logVerbosity)
         #Variable that stores what the status is for the user. This is just initialization
         self.statusLabel = ObjectProperty(None)
@@ -505,6 +512,7 @@ class QuitAppPage(Screen):
         self.quitCount = 0;
     #This method runs when the deleteDataAndQuit button is clicked
     def deleteDataAndQuitButtonClicked(self):
+        clockThread.pauseThread()
         Logger.info('Delete data and quit clicked')
         self.quitCount += 1
         if (self.quitCount % 5 == 0):
@@ -551,7 +559,8 @@ class QuitAppPage(Screen):
                     this.store.put("quitAppLabelColor", value = [1, 0.6, 0, 1])
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
-
+    def resumeThread(self):
+        clockThread.resumeThread()
 
 #SendData class page (reference my.kv file)
 class SendDataPage(Screen):
@@ -563,6 +572,7 @@ class SendDataPage(Screen):
         self.recoveredCount = 0
         Logger.info('creating an instance of SendDataPage')
         self.statusLabel = ObjectProperty(None)
+
     #Convers a dictionary to a string used for permanent storage and sending to server
     def getCSVString(self):
         returnStr = this.store.get("selfMac")["value"] + ","
@@ -686,7 +696,7 @@ class SeeDataPage(Screen):
 class WindowManager(ScreenManager):
     pass
 
-class ClockThread():
+class clockThread():
     def __init__(self, runInterval):
         self.enabled = True
         self.running = True
@@ -697,7 +707,7 @@ class ClockThread():
     def thread_func(self):
         while self.enabled:
             for index in range(self.runInterval):
-                while not self.running:
+                while not self.running and self.enabled:
                     time.sleep(1)
                 if self.enabled:
                     time.sleep(1)
@@ -708,15 +718,18 @@ class ClockThread():
                 GetMacAdd.getMac()
 
 
-    def killThread(): # permanantly kill the thread (call on exit)
+    def killThread(self): # permanantly kill the thread (call on exit)
+        Logger.info("Sending SIGKILL to thread")
         self.enabled = False
 
 
-    def pauseThread(): # Pauses the thread if it is not scanning for Mac Address
+    def pauseThread(self): # Pauses the thread if it is not scanning for Mac Address
+        Logger.info("Sending Pause to thread")
         self.running = False
 
 
-    def resumeThread():
+    def resumeThread(self):
+        Logger.info("Sending Resume to thread")
         self.running = True
 
 #Kivy file used for formatting
@@ -834,10 +847,6 @@ WindowManager:
         text: root.store.get("homeLabel")["value"]
         size_hint: 1, 0.1
 
-<Rule1>
-    runTimeFunction: runTimeFunction.__self__
-    runTimeFunctionLong: runTimeFunctionLong.__self__
-
 
 <SideBarPage>:
     name: "sidebar"
@@ -913,6 +922,7 @@ WindowManager:
         size_hint: 0.2, 0.05
         text: "Options"
         on_release:
+            root.resumeThread()
             root.clearCounter()
             app.root.current = "sidebar"
             root.manager.transition.direction = "right"
@@ -1009,8 +1019,10 @@ class MyMainApp(App):
 if __name__ == "__main__":
     try:
         Logger.info('App Started')
+        clockThread = clockThread(20)
         MyMainApp().run()
         Logger.info('App Exiting')
+        clockThread.killThread()
         client.freeResources()
         f = open(this.appPath + os.sep + "main.log", "a")
         for log in LoggerHistory.history:
@@ -1024,6 +1036,7 @@ if __name__ == "__main__":
         exit()
     except KeyboardInterrupt:
         Logger.critical('App Exiting')
+        clockThread.killThread()
         f = open(this.appPath + os.sep + "main.log", "a")
         for log in LoggerHistory.history:
             f.write(repr(log) +'\n')
