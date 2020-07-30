@@ -103,7 +103,7 @@ def isInternet():
 #Memory storage class for when the app is running.
 class storageUnit():
 
-    
+
 
     def __init__(self):
         Logger.info('creating an instance of storageUnit')
@@ -376,29 +376,8 @@ class HomePage(Screen, Widget):
             self.actualMac = "\nMAC On Current Network : \n\n" + ""
             showError()
         #The line of code that calls the function runTimeFunction every 20 ticks
-        Clock.schedule_interval(self.runTimeFunction, 20)
-        Clock.schedule_interval(self.runTimeFunctionLong, 3600)
 
 
-    #This function records the MAC addresses of devices on the network every 20 ticks
-    def runTimeFunction(self, deltaT):
-        self.macClass.getMac()
-
-
-    def runTimeFunctionLong(self, deltaT):
-        self.selfMacAddress = self.store.get("selfMac")["value"]
-        #Stores the actual mac addresses that we get from getMac into class instance variable actualMac
-        #This is used to display the network mac addresses the first time users ppen the app
-        self.actualMac = "\nMAC On Current Network : \n\n" + self.macClass.getMac()
-        cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
-        macDict = this.store.get("macDict")["value"]
-        for mac in macDict.keys():
-            strTime = macDict[mac]
-            dateSeen = datetime.datetime.strptime(strTime, '%Y-%m-%d_%H:%M:%S')
-            if dateSeen < cutoff:
-                del macDict[mac]
-        this.store.put("macDict", value = macDict)
-        del macDict
 
 
     #This function sends selfMacAddress to the server and stores the reply in the statusLabel variable in JSON
@@ -706,6 +685,39 @@ class SeeDataPage(Screen):
 #Represent the transitions between the windows above
 class WindowManager(ScreenManager):
     pass
+
+class ClockThread():
+    def __init__(self, runInterval):
+        self.enabled = True
+        self.running = True
+        self.runInterval = runInterval
+        self._thread = threading.Thread(target=self.thread_func, args=())
+        self._thread.start()
+
+    def thread_func(self):
+        while self.enabled:
+            for index in range(self.runInterval):
+                while not self.running:
+                    time.sleep(1)
+                if self.enabled:
+                    time.sleep(1)
+                else:
+                    Logger.info("Thread Killed")
+                    break
+            if self.enabled:
+                GetMacAdd.getMac()
+
+
+    def killThread(): # permanantly kill the thread (call on exit)
+        self.enabled = False
+
+
+    def pauseThread(): # Pauses the thread if it is not scanning for Mac Address
+        self.running = False
+
+
+    def resumeThread():
+        self.running = True
 
 #Kivy file used for formatting
 kivyFile = '''

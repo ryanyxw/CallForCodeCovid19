@@ -1,13 +1,13 @@
 [app]
 
 # (str) Title of your application
-title = CallForCodeV1
+title = COVID-19 Contact Tracer
 
 # (str) Package name
-package.name = cfcv1
+package.name = CovidContactTracer
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.test
+package.domain = io.ngrok.covidcontacttracer
 
 # (str) Source code where the main.py live
 source.dir = .
@@ -36,7 +36,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,pathlib,datetime,client,netifaces,pycurl
+requirements = python3,kivy,pathlib,datetime,client,netifaces
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
