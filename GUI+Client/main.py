@@ -85,6 +85,7 @@ def isInternet():
 #Memory storage class for when the app is running.
 class storageUnit():
 
+    
 
     def __init__(self):
         Logger.info('creating an instance of storageUnit')
@@ -338,7 +339,7 @@ class HomePage(Screen, Widget):
             self.selfMacAddress = self.store.get("selfMac")["value"]
             #Stores the actual mac addresses that we get from getMac into class instance variable actualMac
             #This is used to display the network mac addresses the first time users ppen the app
-            self.actualMac = "MAC On Current Network : \n\n" + self.macClass.getMac()
+            self.actualMac = "\nMAC On Current Network : \n\n" + self.macClass.getMac()
             cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
             macDict = this.store.get("macDict")["value"]
             for mac in macDict.keys():
@@ -352,7 +353,7 @@ class HomePage(Screen, Widget):
         else:
             this.store.put("homeLabelColor", value = [1, 0, 0, 1])
             self.selfMacAddress = ""
-            self.actualMac = "MAC On Current Network : \n\n" + ""
+            self.actualMac = "\nMAC On Current Network : \n\n" + ""
             showError()
         #The line of code that calls the function runTimeFunction every 20 ticks
         Clock.schedule_interval(self.runTimeFunction, 20)
@@ -368,7 +369,7 @@ class HomePage(Screen, Widget):
         self.selfMacAddress = self.store.get("selfMac")["value"]
         #Stores the actual mac addresses that we get from getMac into class instance variable actualMac
         #This is used to display the network mac addresses the first time users ppen the app
-        self.actualMac = "MAC On Current Network : \n\n" + self.macClass.getMac()
+        self.actualMac = "\nMAC On Current Network : \n\n" + self.macClass.getMac()
         cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
         macDict = this.store.get("macDict")["value"]
         for mac in macDict.keys():
@@ -457,7 +458,7 @@ class HomePage(Screen, Widget):
     #This method is used when we click the button to check our current network mac and confirm with the server
     def calculateMac(self):
         #actualMac is the variable that stores the current network after arp-a again
-        self.actualMac = "MAC On Current Network : \n\n" + self.macClass.getMac()
+        self.actualMac = "\nMAC On Current Network : \n\n" + self.macClass.getMac()
         #This line checks with the server to see if user has already contacted infected individual
         self.coronaCatcherButtonClicked()
         Logger.info('Calculated MAC Addr to be ' + self.actualMac)
@@ -655,6 +656,7 @@ class SendDataPage(Screen):
                     this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Good job recovering! ")
                     this.store.put("sendDataLabelColor", value = [0, 1, 0, 1])
                     self.statusLabel.background_color = (0, 1, 0, 1)
+                    this.store.put("isInfected", value = False)
 
 #SeeDataPage class page (reference my.kv file)
 class SeeDataPage(Screen):
@@ -694,9 +696,17 @@ WindowManager:
     QuitAppPage:
     SendDataPage:
     SeeDataPage:
-
-<ScaleLabel@Label>:
-	_scale: 1. if self.texture_size[0] < self.width else float(self.width) / self.texture_size[0]
+<BackgroundColor@Widget>
+    background_color: 1, 1, 1, 1
+    canvas.before:
+        Color:
+            rgba: root.background_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+<ScaleLabel@Label+BackgroundColor>:
+	background_color: 0, 0, 0, 0
+    _scale: 1. if self.texture_size[0] < self.width else float(self.width) / self.texture_size[0]
 	canvas.before:
 		PushMatrix
 		Scale:
@@ -706,7 +716,8 @@ WindowManager:
 	canvas.after:
 		PopMatrix
 
-<-ScaleButton@Button>:
+<-ScaleButton@Button+BackgroundColor>:
+    background_color: 0, 0, 0, 0
 	state_image: self.background_normal if self.state == 'normal' else self.background_down
 	disabled_image: self.background_disabled_normal if self.state == 'normal' else self.background_disabled_down
 	_scale: 1. if self.texture_size[0] < self.width else float(self.width) / self.texture_size[0]
@@ -749,9 +760,16 @@ WindowManager:
     name: "home"
     statusLabel : status
     macDisplay: mac
-
+    background_color: 1, 1, 1, 1
+    canvas.before:
+        Color:
+            rgba: root.background_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
+        background_color: 1, 1, 1, 1
         size_hint: 0.2, 0.05
         text: "Options"
         on_release:
@@ -759,13 +777,15 @@ WindowManager:
             root.manager.transition.direction = "left"
     ScaleButton:
         pos_hint: {"center_x":0.5, "center_y": 0.8 }
+        background_color: 1, 0, 0, 1
         size_hint: 0.7, 0.2
         text: "Click To Check My Risk"
         on_release:
             root.calculateMac()
-    ScaleButton:
+    ScaleLabel:
         id: mac
         pos_hint: {"center_x": 0.5, "center_y": 0.45}
+        background_color: 0, 0, 0, 1
         size_hint: 0.7, 0.4
         text: root.actualMac
         text_size: self.size
@@ -791,30 +811,35 @@ WindowManager:
 
         ScaleButton:
             text: "Home"
+            background_color: 1, 1, 1, 1
             on_release:
                 app.root.current = "home"
                 root.manager.transition.direction = "right"
 
         ScaleButton:
             text: "About Us / Contact Us"
+            background_color: 1, 1, 1, 0.8
             on_release:
                 app.root.current = "aboutus"
                 root.manager.transition.direction = "left"
 
         ScaleButton:
             text: "My MAC Addresses"
+            background_color: 1, 1, 1, 0.6
             on_release:
                 app.root.current = "seedata"
                 root.manager.transition.direction = "left"
 
         ScaleButton:
             text: "Delete Data & Quit"
+            background_color: 1, 1, 1, 0.4
             on_release:
                 app.root.current = "quitapp"
                 root.manager.transition.direction = "left"
 
         ScaleButton:
             text: "I'm Infected"
+            background_color: 1, 1, 1, 0.2
             on_release:
                 app.root.current = "senddata"
                 root.manager.transition.direction = "left"
@@ -824,6 +849,7 @@ WindowManager:
 
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
+        background_color: 1, 1, 1, 1
         size_hint: 0.2, 0.05
         text: "Options"
         on_release:
@@ -847,6 +873,7 @@ WindowManager:
     statusLabel : status
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
+        background_color: 1, 1, 1, 1
         size_hint: 0.2, 0.05
         text: "Options"
         on_release:
@@ -855,6 +882,7 @@ WindowManager:
             root.manager.transition.direction = "right"
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.7}
+        background_color: 1, 0, 0, 1
         size_hint: 0.7, 0.12
         text: "Delete Data"
         on_release:
@@ -871,6 +899,7 @@ WindowManager:
     statusLabel : status
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
+        background_color: 1, 1, 1, 1
         size_hint: 0.2, 0.05
         text: "Options"
         on_release:
@@ -879,12 +908,14 @@ WindowManager:
             root.manager.transition.direction = "right"
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.7}
+        background_color: 1, 0, 0, 1
         size_hint: 0.7, 0.12
         text: "I'm Infected"
         on_release:
             root.imInfectedButtonClicked()
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.55}
+        background_color: 0, 1, 0, 1
         size_hint: 0.7, 0.12
         text: "I just recovered"
         on_release:
@@ -903,7 +934,7 @@ WindowManager:
         pos_hint: {"center_x": 0.5, "center_y": 0.86}
         size_hint: 0.7, 0.04
         text: "Recent Added Mac Addresses"
-        background_color: 1, 0, 0, 1
+        background_color: 1, 0, 0, 0.5
     ScaleButton:
         id: display
         pos_hint: {"center_x": 0.5, "center_y": 0.4375}
@@ -914,6 +945,7 @@ WindowManager:
         valign: "top"
     ScaleButton:
         pos_hint: {"x": 0.05, "top": 0.97}
+        background_color: 1, 1, 1, 1
         size_hint: 0.2, 0.05
         text: "Options"
         on_release:
@@ -922,6 +954,7 @@ WindowManager:
 
     ScaleButton:
         pos_hint: {"right": 0.95, "top": 0.97}
+        background_color: 1, 1, 1, 1
         size_hint: 0.2, 0.05
         text: "Renew"
         on_release:
