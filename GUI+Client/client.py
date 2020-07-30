@@ -308,7 +308,7 @@ def freeResources():
 
 
 def testInternetConnection():
-    httpReq(this.__baseURL__ ,None,None,30,'GET')
+    httpReq(this.__baseURL__ ,None,None,10,'GET')
     if this.__code__ != 500:
         return True
     else:
