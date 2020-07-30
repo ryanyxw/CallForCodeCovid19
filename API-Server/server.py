@@ -94,7 +94,10 @@ app = flask.Flask(__name__)
 
 @app.errorhandler(404)
 def page_not_found(e):
-    strike(ip,mac,secretKey,2)
+    ip = request.environ.get('REMOTE_ADDR')
+	if ip == '127.0.0.1' or ip == '0.0.0.0' or ip == '0.0.0.0.0.0':
+		ip = request.environ.get('HTTP_X_REAL_IP')
+    strike(ip,None,None,2)
     return 404
 
 # Test if user is banned (had 3 strikes) or is committing a bannable offense (SQL injection, admin inpersonation)
@@ -622,9 +625,9 @@ def pauseServer():
 		return 'Maintenance mode off', 200
 
 
-@app.route('/', methods=["GET"])
+@app.route('/networkTest', methods=["GET"])
 def isHere():
-	return 200
+	return "ACK", 200
 
 
 @atexit.register
