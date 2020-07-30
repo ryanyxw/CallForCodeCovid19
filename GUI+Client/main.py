@@ -802,6 +802,10 @@ WindowManager:
         text: root.store.get("homeLabel")["value"]
         size_hint: 1, 0.1
 
+<Rule1>
+    runTimeFunction: runTimeFunction.__self__
+    runTimeFunctionLong: runTimeFunctionLong.__self__
+
 
 <SideBarPage>:
     name: "sidebar"
