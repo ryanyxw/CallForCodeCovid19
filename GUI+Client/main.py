@@ -608,12 +608,15 @@ class QuitAppPage(Screen):
     #Clears the counter when the user hits "back"
     def clearCounter(self):
         self.quitCount = 0;
+        self.getCount()
     #This method runs when the deleteDataAndQuit button is clicked
     def deleteDataAndQuitButtonClicked(self):
         pauseThread(this.myClockThread)
         Logger.info('Delete data and quit clicked')
         self.quitCount += 1
+        self.getCount()
         if (self.quitCount % 5 == 0):
+            self.clearCounter()
             if (not isInternet()):
                 showErrorInternet()
             else:
@@ -637,6 +640,12 @@ class QuitAppPage(Screen):
                     showErrorCatchAll()
     def resumeThread(self):
         resumeThread(this.myClockThread)
+    def getCount(self):
+        origText = self.statusLabel.text
+        if (origText[-1].isnumeric()):
+            self.statusLabel.text = origText[:-9] + " |  Del:" + str(6 - self.quitCount%6)
+        else:
+            self.statusLabel.text = origText + " |  Del:" + str(6 - self.quitCount%6)
 
 #SendData class page (reference my.kv file)
 class SendDataPage(Screen):
@@ -660,12 +669,14 @@ class SendDataPage(Screen):
     def clearCounter(self):
         self.infectedCount = 0
         self.recoveredCount = 0
+        self.getCount()
     #This method is called when the ImInfected button is clicked
     def imInfectedButtonClicked(self):
         Logger.info('imInfected button clicked')
         self.infectedCount += 1
         self.recoveredCount = 0
         if (self.infectedCount % 6 == 0):
+            self.clearCounter()
             if (not isInternet()):
                 showErrorInternet()
             else:
@@ -682,12 +693,15 @@ class SendDataPage(Screen):
                     this.store.put("sendDataLabelColor", value = [0, 1, 0, 1])
                     self.statusLabel.background_color = (0, 1, 0, 1)
                     this.store.put("isInfected", value = True)
+        else:
+            self.getCount()
     #This method is called when the iJustRecovered button is clicked
     def iJustRecoveredButtonClicked(self):
         Logger.info('iJustRecovered button clicked')
         self.recoveredCount += 1
         self.infectedCount = 0
         if (self.recoveredCount % 6 == 0):
+            self.clearCounter()
             if (not this.store.get("isInfected")["value"]):
                 showErrorLogic()
             elif (not isInternet()):
@@ -706,6 +720,14 @@ class SendDataPage(Screen):
                     this.store.put("sendDataLabelColor", value = [0, 1, 0, 1])
                     self.statusLabel.background_color = (0, 1, 0, 1)
                     this.store.put("isInfected", value = False)
+        else:
+            self.getCount()
+    def getCount(self):
+        origText = self.statusLabel.text
+        if (origText[-1].isnumeric()):
+            self.statusLabel.text = origText[:-15] + " |  Inf:" + str(6 - self.infectedCount%6) + " Rec:" + str(6 - self.recoveredCount%6)
+        else:
+            self.statusLabel.text = origText + " |  Inf:" + str(6 - self.infectedCount%6) + " Rec:" + str(6 - self.recoveredCount%6)
 
 #SeeDataPage class page (reference my.kv file)
 class SeeDataPage(Screen):
@@ -1004,9 +1026,11 @@ WindowManager:
         pos_hint: {"center_x":0.5, "center_y": 0.8 }
         background_color: 1, 0, 0, 1
         size_hint: 0.7, 0.2
-        text: "Click To Check My Risk"
+        text: "Click To Check My Risk (Once every 8 hours)"
         on_release:
             root.calculateMac()
+        halign: "center"
+        valign: "middle"
     ScaleLabel:
         id: mac
         pos_hint: {"center_x": 0.5, "center_y": 0.45}
@@ -1110,7 +1134,7 @@ WindowManager:
         pos_hint: {"center_x": 0.5, "center_y": 0.7}
         background_color: 1, 0, 0, 1
         size_hint: 0.7, 0.12
-        text: "Delete Data"
+        text: "Delete Data (Click 6 times)"
         on_release:
             root.deleteDataAndQuitButtonClicked()
     ScaleButton:
@@ -1136,14 +1160,14 @@ WindowManager:
         pos_hint: {"center_x": 0.5, "center_y": 0.7}
         background_color: 1, 0, 0, 1
         size_hint: 0.7, 0.12
-        text: "I'm Infected"
+        text: "I'm Infected (Click 6 times)"
         on_release:
             root.imInfectedButtonClicked()
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.55}
         background_color: 0, 1, 0, 1
         size_hint: 0.7, 0.12
-        text: "I just recovered"
+        text: "I just recovered (Click 6 times)"
         on_release:
             root.iJustRecoveredButtonClicked()
     ScaleButton:
