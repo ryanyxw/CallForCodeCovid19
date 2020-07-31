@@ -1043,6 +1043,7 @@ WindowManager:
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.175}
         size_hint: 0.7, 0.05
+        background_color: 0, 0, 0, 1
         text: "Your Mac: " + root.selfMacAddress
     ScaleButton:
         id: status
@@ -1160,14 +1161,14 @@ WindowManager:
         pos_hint: {"center_x": 0.5, "center_y": 0.7}
         background_color: 1, 0, 0, 1
         size_hint: 0.7, 0.12
-        text: "I'm Infected (Click 6 times)"
+        text: "I Tested Positive (Click 6 times)"
         on_release:
             root.imInfectedButtonClicked()
     ScaleButton:
         pos_hint: {"center_x": 0.5, "center_y": 0.55}
         background_color: 0, 1, 0, 1
         size_hint: 0.7, 0.12
-        text: "I just recovered (Click 6 times)"
+        text: "I Recovered (Click 6 times)"
         on_release:
             root.iJustRecoveredButtonClicked()
     ScaleButton:
