@@ -288,7 +288,7 @@ class GetMacAdd():
 #Class that defines the error popup page
 def showError():
     show = ErrorPopup()
-    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65))
+    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65), pos_hint={"center_x":0.5, "center_y": 0.5})
     popupWindow.open()
 
 
@@ -703,6 +703,7 @@ class clockThread():
         self.runInterval = runInterval
         self._thread = threading.Thread(target=self.thread_func, args=())
         self._thread.start()
+        self.macGenerator = GetMacAdd()
 
     def thread_func(self):
         while self.enabled:
@@ -715,18 +716,15 @@ class clockThread():
                     Logger.info("Thread Killed")
                     break
             if self.enabled:
-                GetMacAdd.getMac()
-
+                self.macGenerator.getMac()
 
     def killThread(self): # permanantly kill the thread (call on exit)
         Logger.info("Sending SIGKILL to thread")
         self.enabled = False
 
-
     def pauseThread(self): # Pauses the thread if it is not scanning for Mac Address
         Logger.info("Sending Pause to thread")
         self.running = False
-
 
     def resumeThread(self):
         Logger.info("Sending Resume to thread")
