@@ -335,7 +335,7 @@ def httpReq(url,body,headers,timeout,method):
     else:
         this.__header__["Content-Length"] = 0
     Logger.info(repr(url) + repr(body) + repr(headers) + repr(timeout) + repr(method))
-    req = UrlRequest(url, req_body=body,req_headers=headers,timeout=timeout,method=method,debug=False,on_success=on_complete,on_error=on_complete,on_redirect=on_complete,on_failure=on_complete)
+    req = UrlRequest(url, req_body=body,req_headers=headers,timeout=timeout,method=method,debug=False,on_error=on_complete,on_redirect=on_complete,on_failure=on_complete)
     req.wait()
     if req.resp_status is not None:
         this.__code__ = req.resp_status
