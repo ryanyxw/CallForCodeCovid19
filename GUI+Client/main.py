@@ -110,7 +110,7 @@ class storageUnit():
 
     #Adds a unknown / new mac address that was not on the previous network into the json file
     def addEntry(self, macAddress, time):
-        this.myClockThread.pauseThread()
+        pauseThread(this.myClockThread)
         if macAddress in this.store.get("macDict")["value"]:
             tempNewMacDict = this.store.get("macDict")["value"]
             tempNewMacDict[macAddress] = time
@@ -139,7 +139,7 @@ class storageUnit():
             tempNewRecentTen = 0
 
             Logger.info('addEntry added ' + macAddress + ' met at '+time)
-        this.myClockThread.resumeThread()
+        resumeThread(this.myClockThread)
 
 
     #Checks if the previous prevNetwork is the same as foreignSet, which is a set
@@ -276,9 +276,9 @@ class GetMacAdd():
             #Appends on a new mac address if it does not exist
             for macAdd in diffArr:
                 self.storage.addEntry(macAdd, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
-            this.myClockThread.pauseThread()
+            pauseThread(this.myClockThread)
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
-            this.myClockThread.resumeThread()
+            resumeThread(this.myClockThread)
             return self.getString(this.store.get("prevNetwork")["value"])
 
 
@@ -511,7 +511,7 @@ class QuitAppPage(Screen):
         self.quitCount = 0;
     #This method runs when the deleteDataAndQuit button is clicked
     def deleteDataAndQuitButtonClicked(self):
-        this.myClockThread.pauseThread()
+        pauseThread(this.myClockThread)
         Logger.info('Delete data and quit clicked')
         self.quitCount += 1
         if (self.quitCount % 5 == 0):
@@ -559,7 +559,7 @@ class QuitAppPage(Screen):
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
     def resumeThread(self):
-        this.myClockThread.resumeThread()
+        resumeThread(this.myClockThread)
 
 #SendData class page (reference my.kv file)
 class SendDataPage(Screen):
@@ -719,17 +719,17 @@ class clockThread():
             if self.enabled:
                 self.macGenerator.getMac()
 
-    def killThread(self): # permanantly kill the thread (call on exit)
-        Logger.info("Sending SIGKILL to thread")
-        self.enabled = False
+def killThread(clockThread): # permanantly kill the thread (call on exit)
+    Logger.info("Sending SIGKILL to thread")
+    clockThread.enabled = False
 
-    def pauseThread(self): # Pauses the thread if it is not scanning for Mac Address
-        Logger.info("Sending Pause to thread")
-        self.running = False
+def pauseThread(clockThread): # Pauses the thread if it is not scanning for Mac Address
+    Logger.info("Sending Pause to thread")
+    clockThread.running = False
 
-    def resumeThread(self):
-        Logger.info("Sending Resume to thread")
-        self.running = True
+def resumeThread(clockThread):
+    Logger.info("Sending Resume to thread")
+    clockThread.running = True
 
 #Kivy file used for formatting
 kivyFile = '''
@@ -1022,7 +1022,7 @@ if __name__ == "__main__":
         this.myClockThread = clockThread(600)
         MyMainApp().run()
         Logger.info('App Exiting')
-        this.myClockThread.killThread()
+        killThread(this.myClockThread)
         client.freeResources()
         f = open(this.appPath + os.sep + "main.log", "a")
         for log in LoggerHistory.history:
@@ -1036,7 +1036,7 @@ if __name__ == "__main__":
         exit()
     except KeyboardInterrupt:
         Logger.critical('App Exiting')
-        this.myClockThread.killThread()
+        killThread(this.myClockThread)
         f = open(this.appPath + os.sep + "main.log", "a")
         for log in LoggerHistory.history:
             f.write(repr(log) +'\n')
