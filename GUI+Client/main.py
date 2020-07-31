@@ -1020,7 +1020,7 @@ class MyMainApp(App):
 if __name__ == "__main__":
     try:
         Logger.info('App Started')
-        this.myClockThread = clockThread(20)
+        this.myClockThread = clockThread(600)
         MyMainApp().run()
         Logger.info('App Exiting')
         this.myClockThread.killThread()
