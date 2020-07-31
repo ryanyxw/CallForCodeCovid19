@@ -407,21 +407,23 @@ class HomePage(Screen, Widget):
             else:
                 returnVal = client.queryMyMacAddr(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
                 now = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S.%f')
-                this.store.put("LastQueryTime", value = now)
                 if (returnVal == -1):
                     self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou have contacted someone allegedly with the virus. Please quarantine"
                     this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou have contacted someone with the virus. Please quarantine")
+                    this.store.put("LastQueryTime", value = now)
                     this.store.put("homeLabelColor", value = [1, 0, 0, 1])
                     self.statusLabel.background_color = (1, 0, 0, 1)
                 elif (returnVal == -2):
                     self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou have contacted someone confirmed with the virus. Please quarantine"
                     this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou have contacted someone with the virus. Please quarantine")
+                    this.store.put("LastQueryTime", value = now)
                     this.store.put("homeLabelColor", value = [1, 0, 0, 1])
                     self.statusLabel.background_color = (1, 0, 0, 1)
                 elif (returnVal == 0):
                     self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou are still safe!"
                     this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nyou are still safe!")
                     this.store.put("homeLabelColor", value = [0, 1, 0, 1])
+                    this.store.put("LastQueryTime", value = now)
                     self.statusLabel.background_color = (0, 1, 0, 1)
                 elif (returnVal == 2):
                     self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error, please quit the app and retry (2)"
