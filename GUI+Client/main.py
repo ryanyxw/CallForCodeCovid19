@@ -104,8 +104,6 @@ def isInternet():
 #Memory storage class for when the app is running.
 class storageUnit():
 
-
-
     def __init__(self):
         Logger.info('creating an instance of storageUnit')
 
@@ -316,7 +314,7 @@ class HomePage(Screen, Widget):
         #Variable that stores what the mac addresses are printed on. This is just initialization
         self.macDisplay = ObjectProperty(None)
         #If this is a new user
-        if (not this.store.exists('numEntries')):
+        if ((not this.store.exists('secretKey')) or (this.store.get("secretKey")["value"] == '')):
             #First initiates everything within the json file
             this.store.put("numEntries", value = 0)
             this.store.put("macDict", value = dict())
@@ -425,8 +423,8 @@ class HomePage(Screen, Widget):
                     this.store.put("LastQueryTime", value = now)
                     self.statusLabel.background_color = (0, 1, 0, 1)
                 elif (returnVal == 2):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error, please quit the app and retry (2)"
-                    this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error, please quit the app and retry (2)")
+                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error / Server out of memory, please quit the app and retry (2)"
+                    this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error / Server out of memory, please quit the app and retry (2)")
                     this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
@@ -600,8 +598,8 @@ class SendDataPage(Screen):
             else:
                 returnVal = client.positiveReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"], self.getCSVString())
                 if (returnVal == 2):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)"
-                    this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)")
+                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error / Server out of memory). Restart app and try again (2)"
+                    this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error / Server out of memory). Restart app and try again (2)")
                     this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
@@ -644,8 +642,8 @@ class SendDataPage(Screen):
             else:
                 returnVal = client.negativeReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
                 if (returnVal == 2):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)"
-                    this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error). Restart app and try again (2)")
+                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error / Server out of memory). Restart app and try again (2)"
+                    this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error / Server out of memory). Restart app and try again (2)")
                     this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
@@ -1013,6 +1011,7 @@ kv = Builder.load_string(kivyFile)
 class MyMainApp(App):
     def build(self):
         return kv
+
 
 #Runs the app
 if __name__ == "__main__":
