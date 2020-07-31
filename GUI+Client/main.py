@@ -110,7 +110,7 @@ class storageUnit():
 
     #Adds a unknown / new mac address that was not on the previous network into the json file
     def addEntry(self, macAddress, time):
-        this.myClockThread.pauseThread()
+        #this.myClockThread.pauseThread()
         if macAddress in this.store.get("macDict")["value"]:
             tempNewMacDict = this.store.get("macDict")["value"]
             tempNewMacDict[macAddress] = time
@@ -139,7 +139,7 @@ class storageUnit():
             tempNewRecentTen = 0
 
             Logger.info('addEntry added ' + macAddress + ' met at '+time)
-        this.myClockThread.resumeThread()
+        #this.myClockThread.resumeThread()
 
 
     #Checks if the previous prevNetwork is the same as foreignSet, which is a set
