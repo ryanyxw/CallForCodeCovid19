@@ -322,7 +322,7 @@ def on_complete(request,req):
     Logger.info("Request Completed")
     this.__completed__ = True
     Logger.info(str(type(req)))
-    if str(type(req)) in ["<class 'socket.gaierror'>"]:
+    if str(type(req)) in ["<class 'socket.gaierror'>","<class 'OSError'>","<class 'Exception'>"]:
         raise NoInternetException
     elif str(type(req)) in ["<class 'socket.timeout'>"]:
         raise TimeoutException
