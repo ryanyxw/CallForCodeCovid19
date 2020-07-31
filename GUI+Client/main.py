@@ -7,7 +7,6 @@ from kivy.storage.jsonstore import JsonStore
 from kivy.utils import platform
 from kivy.logger import Logger
 from kivy.logger import LoggerHistory
-from kivy.clock import Clock
 from kivy.config import Config
 from kivy.uix.popup import Popup
 from kivy.uix.floatlayout import FloatLayout
