@@ -719,6 +719,7 @@ class clockThread():
                     Logger.info("Thread Killed")
                     break
             if self.enabled:
+                Logger.info("Thread Executed Function")
                 self.macGenerator.getMac()
 
 def killThread(clockThread): # permanantly kill the thread (call on exit)
