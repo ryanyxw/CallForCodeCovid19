@@ -307,7 +307,6 @@ def isInternet():
         Logger.warning("No internet connection to server. ")
         return False
 
-
 #Class that defines the error popup page
 def showError():
     show = ErrorPopup()
@@ -317,6 +316,107 @@ def showError():
 
 #Class that formats the error popup page
 class ErrorPopup(Screen, FloatLayout):
+    pass
+
+#Class that defines the error popup page
+def showErrorServer():
+    show = ErrorPopupServer()
+    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65), pos_hint={"center_x":0.5, "center_y": 0.5})
+    popupWindow.open()
+
+
+#Class that formats the error popup page
+class ErrorPopupServer(Screen, FloatLayout):
+    pass
+
+#Class that defines the error popup page
+def showErrorSecret():
+    show = ErrorPopupSecret()
+    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65), pos_hint={"center_x":0.5, "center_y": 0.5})
+    popupWindow.open()
+
+
+#Class that formats the error popup page
+class ErrorPopupSecret(Screen, FloatLayout):
+    pass
+
+#Class that defines the error popup page
+def showErrorMAC():
+    show = ErrorPopupMAC()
+    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65), pos_hint={"center_x":0.5, "center_y": 0.5})
+    popupWindow.open()
+
+
+#Class that formats the error popup page
+class ErrorPopupMAC(Screen, FloatLayout):
+    pass
+
+#Class that defines the error popup page
+def showErrorTime():
+    show = ErrorPopupTime()
+    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65), pos_hint={"center_x":0.5, "center_y": 0.5})
+    popupWindow.open()
+
+
+#Class that formats the error popup page
+class ErrorPopupTime(Screen, FloatLayout):
+    pass
+
+#Class that defines the error popup page
+def showErrorCSV():
+    show = ErrorPopupCSV()
+    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65), pos_hint={"center_x":0.5, "center_y": 0.5})
+    popupWindow.open()
+
+
+#Class that formats the error popup page
+class ErrorPopupCSV(Screen, FloatLayout):
+    pass
+
+
+#Class that defines the error popup page
+def showErrorActualTime(allowedTime):
+    show = ErrorPopupActualTime()
+    popupWindow = Popup(title="Next check Allowed : " + str(allowedTime), content=show,size_hint=(0.65, 0.65), pos_hint={"center_x":0.5, "center_y": 0.5})
+    popupWindow.open()
+
+
+#Class that formats the error popup page
+class ErrorPopupActualTime(Screen, FloatLayout):
+    pass
+
+
+#Class that defines the error popup page
+def showErrorCatchAll():
+    show = ErrorPopupCatchAll()
+    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65), pos_hint={"center_x":0.5, "center_y": 0.5})
+    popupWindow.open()
+
+
+#Class that formats the error popup page
+class ErrorPopupCatchAll(Screen, FloatLayout):
+    pass
+
+#Class that defines the error popup page
+def showErrorInternet():
+    show = ErrorPopupInternet()
+    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65), pos_hint={"center_x":0.5, "center_y": 0.5})
+    popupWindow.open()
+
+
+#Class that formats the error popup page
+class ErrorPopupInternet(Screen, FloatLayout):
+    pass
+
+#Class that defines the error popup page
+def showErrorLogic():
+    show = ErrorPopupLogic()
+    popupWindow = Popup(title="Error! ", content=show,size_hint=(0.65, 0.65), pos_hint={"center_x":0.5, "center_y": 0.5})
+    popupWindow.open()
+
+
+#Class that formats the error popup page
+class ErrorPopupLogic(Screen, FloatLayout):
     pass
 
 
@@ -422,11 +522,7 @@ class HomePage(Screen, Widget):
         currentTime = datetime.datetime.now()
         if allowedTime < currentTime:
             if (not isInternet()):
-                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nNo Internet Connection"
-                this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nNo Internet Connection")
-                this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
-                self.statusLabel.background_color = (1, 0.6, 0, 1)
-                showError()
+                showErrorInternet()
             else:
                 returnVal = client.queryMyMacAddr(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
                 now = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S.%f')
@@ -449,42 +545,18 @@ class HomePage(Screen, Widget):
                     this.store.put("LastQueryTime", value = now)
                     self.statusLabel.background_color = (0, 1, 0, 1)
                 elif (returnVal == 2):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error / Server out of memory, please quit the app and retry (2)"
-                    this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error / Server out of memory, please quit the app and retry (2)")
-                    this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorServer()
                 elif (returnVal == 3):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, please quit the app and retry (3)"
-                    this.store.put("Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect secret key, please quit the app and retry (3)")
-                    this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorSecret()
                 elif (returnVal == 4):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, Please quit the app and try again (4)"
-                    this.store.put("Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid mac address, Please quit the app and try again (4)")
-                    this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorMAC()
                 elif (returnVal == 5):
-                    self.statusLabel.text = "Please only check once every 8 hours."
-                    this.store.put("homeLabel", value = "Please only check once every 8 hours.")
-                    this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorTime()
                 else:
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nUnknown error occurred. Please restart the app. If this persists, please contact developers"
-                    this.store.put("homeLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nUnknown error occurred. Please restart the app. If this persists, please contact developers")
-                    this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorCatchAll()
         #Requested to server within 8 hour timeframe
         else:
-            self.statusLabel.text = "Please only check once every 8 hours. Feel free \nto return at " + str(allowedTime)
-            this.store.put("homeLabel", value = "Please only check once every 8 hours. Feel free \nto return at " + str(allowedTime))
-            this.store.put("homeLabelColor", value = [1, 0.6, 0, 1])
-            self.statusLabel.background_color = (1, 0.6, 0, 1)
-            showError()
+            showErrorActualTime(allowedTime)
 
     #This method is used when we click the button to check our current network mac and confirm with the server
     def calculateMac(self):
@@ -497,6 +569,7 @@ class HomePage(Screen, Widget):
         #This changes the displayed text into the current network by formatting it with the getString method in the macClass
         self.macDisplay.text = self.macClass.getString(self.store.get("prevNetwork")["value"])
         return self.actualMac
+
 
 
 #SideBar class page (reference my.kv file)
@@ -542,9 +615,7 @@ class QuitAppPage(Screen):
         self.quitCount += 1
         if (self.quitCount % 5 == 0):
             if (not isInternet()):
-                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 No Internet Connection"
-                this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \n1 No Internet Connection")
-                showError()
+                showErrorInternet()
             else:
                 returnValue = client.forgetUser(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
                 if (returnValue == 0):
@@ -555,35 +626,15 @@ class QuitAppPage(Screen):
                     this.store.put("quitAppLabelColor", value = [0, 1, 0, 1])
                     self.statusLabel.background_color = (0, 1, 0, 1)
                 elif (returnValue == 2):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error (2)"
-                    this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nServer Error (2)")
-                    this.store.put("quitAppLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorServer()
                 elif (returnValue == 3):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nincorrect secret key (3)"
-                    this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nincorrect secret key (3)")
-                    this.store.put("quitAppLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorSecret()
                 elif (returnValue == 4):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \ninvalid mac addr of self (4)"
-                    this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \ninvalid mac addr of self (4)")
-                    this.store.put("quitAppLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorMAC()
                 elif (returnValue == 1):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nUnknown error occurred. Please restart the app. If this persists, please contact developers"
-                    this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nUnknown error occurred. Please restart the app. If this persists, please contact developers")
-                    this.store.put("quitAppLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorCatchAll()
                 else:
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nserver returned unknown command : " + str(returnValue)
-                    this.store.put("quitAppLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nserver returned unknown command : " + str(returnValue))
-                    this.store.put("quitAppLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorCatchAll()
     def resumeThread(self):
         resumeThread(this.myClockThread)
 
@@ -616,31 +667,15 @@ class SendDataPage(Screen):
         self.recoveredCount = 0
         if (self.infectedCount % 6 == 0):
             if (not isInternet()):
-                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nNo Internet Connection"
-                this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nNo Internet Connection")
-                this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
-                self.statusLabel.background_color = (1, 0.6, 0, 1)
-                showError()
+                showErrorInternet()
             else:
                 returnVal = client.positiveReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"], self.getCSVString())
                 if (returnVal == 2):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error / Server out of memory). Restart app and try again (2)"
-                    this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error / Server out of memory). Restart app and try again (2)")
-                    this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorServer()
                 elif (returnVal == 3):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)"
-                    this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)")
-                    this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorSecret()
                 elif (returnVal == 4):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid CSV. Restart app and contact admin"
-                    this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid CSV. Restart app and contact admin")
-                    this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorCSV()
                 else:
                     self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Get well soon!"
                     this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Get well soon!")
@@ -654,37 +689,17 @@ class SendDataPage(Screen):
         self.infectedCount = 0
         if (self.recoveredCount % 6 == 0):
             if (not this.store.get("isInfected")["value"]):
-                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nYou must first get infected to recover"
-                this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nYou must first get infected to recover")
-                this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
-                self.statusLabel.background_color = (1, 0.6, 0, 1)
-                showError()
+                showErrorLogic()
             elif (not isInternet()):
-                self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nNo Internet Connection"
-                this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nNo Internet Connection")
-                this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
-                self.statusLabel.background_color = (1, 0.6, 0, 1)
-                showError()
+                showErrorInternet()
             else:
                 returnVal = client.negativeReport(this.store.get("selfMac")["value"], this.store.get("secretKey")["value"])
                 if (returnVal == 2):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error / Server out of memory). Restart app and try again (2)"
-                    this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRetry is needed(server error / Server out of memory). Restart app and try again (2)")
-                    this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorServer()
                 elif (returnVal == 3):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)"
-                    this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nIncorrect Secret Key. Restart app and try again (3)")
-                    this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorSecret()
                 elif (returnVal == 4):
-                    self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid MAC Address of self. Restart app and contact admin (4)"
-                    this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nInvalid MAC Address of self. Restart app and contact admin (4)")
-                    this.store.put("sendDataLabelColor", value = [1, 0.6, 0, 1])
-                    self.statusLabel.background_color = (1, 0.6, 0, 1)
-                    showError()
+                    showErrorMAC()
                 else:
                     self.statusLabel.text = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Good job recovering! "
                     this.store.put("sendDataLabel", value = "Checked by " + datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S') + ", \nRequest sucess! Good job recovering! ")
@@ -790,19 +805,181 @@ WindowManager:
 			pos: int(self.center_x - self.texture_size[0] / 2.), int(self.center_y - self.texture_size[1] / 2.)
 		PopMatrix
 
+
 <ErrorPopup>:
+    ScaleButton:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleButton:
+        text: "User Initiation Not Successful"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.4}
+    ScaleButton:
+        text: "Please quit the app and try again"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.2}
+    ScaleLabel:
+        text: "Click anywhere outside error box to continue"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0}
+        
+<ErrorPopupServer>:
     ScaleLabel:
         size_hint: 0.6, 0.2
         text: "An Error has Occured! "
         pos_hint: {"x": 0.2, "top": 1}
     ScaleLabel:
-        text: "Click Anywhere Outside The Error Box To Leave"
+        text: "Server Error / Server out of memory"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.4}
+    ScaleLabel:
+        text: "Please quit the app and retry (2)"
         size_hint: 0.8, 0.2
         pos_hint: {"x": 0.1, "y": 0.2}
     ScaleLabel:
-        text: "Look at status bar for more error detail"
+        text: "Click anywhere outside error box to continue"
         size_hint: 0.8, 0.2
-        pos_hint: {"x": 0.1, "y": 0.05}
+        pos_hint: {"x": 0.1, "y": 0}
+        
+<ErrorPopupSecret>:
+    ScaleLabel:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleLabel:
+        text: "Incorrect secret key"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.4}
+    ScaleLabel:
+        text: "Please quit the app and retry (3)"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.2}
+    ScaleLabel:
+        text: "Click anywhere outside error box to continue"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0}
+
+<ErrorPopupMAC>:
+    ScaleLabel:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleLabel:
+        text: "Invalid MAC address"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.4}
+    ScaleLabel:
+        text: "Please quit the app and try again (4)"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.2}
+    ScaleLabel:
+        text: "Click anywhere outside error box to continue"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0}
+
+<ErrorPopupTime>:
+    ScaleLabel:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleLabel:
+        text: "Please only check once every 8 hours."
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.4}
+    ScaleLabel:
+        text: "This is a precaution to not overload our servers"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.2}
+    ScaleLabel:
+        text: "Click anywhere outside error box to continue"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0}
+
+<ErrorPopupCSV>:
+    ScaleLabel:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleLabel:
+        text: "Invalid CSV, please restart your APP and try again"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.4}
+    ScaleLabel:
+        text: "If problem persists, please contact developers"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.2}
+    ScaleLabel:
+        text: "Click anywhere outside error box to continue"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0}
+
+<ErrorPopupActualTime>:
+    ScaleLabel:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleLabel:
+        text: "Please only check once every 8 hours."
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.4}
+    ScaleLabel:
+        text: "Look above to see your next opportunity to check"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.2}
+    ScaleLabel:
+        text: "Click anywhere outside error box to continue"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0}
+
+<ErrorPopupCatchAll>:
+    ScaleLabel:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleLabel:
+        text: "Unknown error occurred. Please restart the app"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.4}
+    ScaleLabel:
+        text: "If this persists, please contact developers"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.2}
+    ScaleLabel:
+        text: "Click anywhere outside error box to continue"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0}
+
+<ErrorPopupInternet>:
+    ScaleLabel:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleLabel:
+        text: "No Internet Connection"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.4}
+
+    ScaleLabel:
+        text: "Click anywhere outside error box to continue"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0}
+
+<ErrorPopupLogic>:
+    ScaleLabel:
+        size_hint: 0.6, 0.2
+        text: "An Error has Occured! "
+        pos_hint: {"x": 0.2, "top": 1}
+    ScaleLabel:
+        text: "You must first get infected to recover"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0.4}
+
+    ScaleLabel:
+        text: "Click anywhere outside error box to continue"
+        size_hint: 0.8, 0.2
+        pos_hint: {"x": 0.1, "y": 0}
+
 
 <HomePage>:
     name: "home"
