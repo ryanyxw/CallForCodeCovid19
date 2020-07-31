@@ -85,21 +85,6 @@ if this.appPath == "":
 Config.set('kivy', 'log_name', "CovidContactTracerGUI_%y-%m-%d_%_.log")
 Config.set('kivy', 'log_maxfiles', 49)
 Config.write()
-#Reference / Creates JSON file in .CovidContactTracer
-if this.appPath != "":
-    this.store = JsonStore(this.appPath + os.sep + this.storeName + '.json')
-else:
-    this.store = JsonStore('local.json')
-
-
-#Method that checks internet connection. Returns False if no internet
-def isInternet():
-    if client.testInternetConnection():
-        Logger.info("Internet connection acheived")
-        return True
-    else:
-        Logger.warning("No internet connection to server. ")
-        return False
 
 #Memory storage class for when the app is running.
 class storageUnit():
@@ -280,6 +265,47 @@ class GetMacAdd():
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
             resumeThread(this.myClockThread)
             return self.getString(this.store.get("prevNetwork")["value"])
+
+
+class clockThread():
+    def __init__(self, runInterval):
+        self.enabled = True
+        self.running = True
+        self.runInterval = runInterval
+        self._thread = threading.Thread(target=self.thread_func, args=())
+        self._thread.start()
+        self.macGenerator = GetMacAdd()
+
+    def thread_func(self):
+        while self.enabled:
+            for index in range(self.runInterval):
+                while not self.running and self.enabled:
+                    time.sleep(1)
+                if self.enabled:
+                    time.sleep(1)
+                else:
+                    Logger.info("Thread Killed")
+                    break
+            if self.enabled:
+                self.macGenerator.getMac()
+#Reference / Creates JSON file in .CovidContactTracer
+
+if this.appPath != "":
+    this.store = JsonStore(this.appPath + os.sep + this.storeName + '.json')
+    this.myClockThread = clockThread(600)
+else:
+    this.store = JsonStore('local.json')
+    this.myClockThread = clockThread(600)
+
+
+#Method that checks internet connection. Returns False if no internet
+def isInternet():
+    if client.testInternetConnection():
+        Logger.info("Internet connection acheived")
+        return True
+    else:
+        Logger.warning("No internet connection to server. ")
+        return False
 
 
 #Class that defines the error popup page
@@ -695,29 +721,7 @@ class SeeDataPage(Screen):
 class WindowManager(ScreenManager):
     pass
 
-class clockThread():
 
-
-    def __init__(self, runInterval):
-        self.enabled = True
-        self.running = True
-        self.runInterval = runInterval
-        self._thread = threading.Thread(target=self.thread_func, args=())
-        self._thread.start()
-        self.macGenerator = GetMacAdd()
-
-    def thread_func(self):
-        while self.enabled:
-            for index in range(self.runInterval):
-                while not self.running and self.enabled:
-                    time.sleep(1)
-                if self.enabled:
-                    time.sleep(1)
-                else:
-                    Logger.info("Thread Killed")
-                    break
-            if self.enabled:
-                self.macGenerator.getMac()
 
 def killThread(clockThread): # permanantly kill the thread (call on exit)
     Logger.info("Sending SIGKILL to thread")
@@ -1019,7 +1023,6 @@ class MyMainApp(App):
 if __name__ == "__main__":
     try:
         Logger.info('App Started')
-        this.myClockThread = clockThread(600)
         MyMainApp().run()
         Logger.info('App Exiting')
         killThread(this.myClockThread)
