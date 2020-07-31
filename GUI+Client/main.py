@@ -98,7 +98,7 @@ def isInternet():
         Logger.info("Internet connection acheived")
         return True
     else:
-        Logger.warn("No internet connection to server. ")
+        Logger.warning("No internet connection to server. ")
         return False
 
 #Memory storage class for when the app is running.
@@ -112,7 +112,7 @@ class storageUnit():
 
     #Adds a unknown / new mac address that was not on the previous network into the json file
     def addEntry(self, macAddress, time):
-        clockThread.pauseThread()
+        this.myClockThread.pauseThread()
         if macAddress in this.store.get("macDict")["value"]:
             tempNewMacDict = this.store.get("macDict")["value"]
             tempNewMacDict[macAddress] = time
@@ -141,7 +141,7 @@ class storageUnit():
             tempNewRecentTen = 0
 
             Logger.info('addEntry added ' + macAddress + ' met at '+time)
-        clockThread.resumeThread()
+        this.myClockThread.resumeThread()
 
 
     #Checks if the previous prevNetwork is the same as foreignSet, which is a set
@@ -278,9 +278,9 @@ class GetMacAdd():
             #Appends on a new mac address if it does not exist
             for macAdd in diffArr:
                 self.storage.addEntry(macAdd, datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
-            clockThread.pauseThread()
+            this.myClockThread.pauseThread()
             this.store.put("prevNetwork", value = dict.fromkeys(compareSet, 0))
-            clockThread.resumeThread()
+            this.myClockThread.resumeThread()
             return self.getString(this.store.get("prevNetwork")["value"])
 
 
@@ -337,7 +337,7 @@ class HomePage(Screen, Widget):
             this.store.put("selfMac", value = self.macClass.getMacSelf()[0])
             #First checks for internet
             if (not isInternet()):
-                this.store.put("homeLabel", value = "Status: Unable to connect to internet. Please check wifi connection")
+                this.store.put("homeLabel", value = "Status: Unable to connect to internet. Please check internet connection")
                 isSuccessful = False
             #Stores the returned secret key in tempSecret if internet found
             else:
@@ -513,7 +513,7 @@ class QuitAppPage(Screen):
         self.quitCount = 0;
     #This method runs when the deleteDataAndQuit button is clicked
     def deleteDataAndQuitButtonClicked(self):
-        clockThread.pauseThread()
+        this.myClockThread.pauseThread()
         Logger.info('Delete data and quit clicked')
         self.quitCount += 1
         if (self.quitCount % 5 == 0):
@@ -561,7 +561,7 @@ class QuitAppPage(Screen):
                     self.statusLabel.background_color = (1, 0.6, 0, 1)
                     showError()
     def resumeThread(self):
-        clockThread.resumeThread()
+        this.myClockThread.resumeThread()
 
 #SendData class page (reference my.kv file)
 class SendDataPage(Screen):
@@ -698,6 +698,8 @@ class WindowManager(ScreenManager):
     pass
 
 class clockThread():
+
+
     def __init__(self, runInterval):
         self.enabled = True
         self.running = True
@@ -1018,10 +1020,10 @@ class MyMainApp(App):
 if __name__ == "__main__":
     try:
         Logger.info('App Started')
-        clockThread = clockThread(20)
+        this.myClockThread = clockThread(20)
         MyMainApp().run()
         Logger.info('App Exiting')
-        clockThread.killThread()
+        this.myClockThread.killThread()
         client.freeResources()
         f = open(this.appPath + os.sep + "main.log", "a")
         for log in LoggerHistory.history:
@@ -1035,7 +1037,7 @@ if __name__ == "__main__":
         exit()
     except KeyboardInterrupt:
         Logger.critical('App Exiting')
-        clockThread.killThread()
+        this.myClockThread.killThread()
         f = open(this.appPath + os.sep + "main.log", "a")
         for log in LoggerHistory.history:
             f.write(repr(log) +'\n')
