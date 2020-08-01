@@ -51,9 +51,9 @@ of data possible, so no private information of our users will be leaked upon att
 
 Our Demo can be found [here](https://youtu.be/507I2lZGL7Q). Our install packages can be found on the [releases page](https://github.com/RyanTooOp/CallForCodeCovid19/releases).
 
-## Supported Platforms
-
 ![Supports Android, Linux, macOS, Windows 10. iOS supported in theory but lacking in Appple Developer license.](https://raw.githubusercontent.com/RyanTooOp/CallForCodeCovid19/master/Images/SupportedPlatforms.jpeg)
 
+## More Source Code/Commit History
 
+Due to an issue regarding branches, our source code was migrated from another repository (owned by @livelycarpet87). The initial commits and the initial history of our source code can be found [there](https://github.com/LivelyCarpet87/CallForCode_COVID-19_Project). 
   
