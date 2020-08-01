@@ -53,7 +53,7 @@ Our Demo can be found [here](https://youtu.be/507I2lZGL7Q). Our install packages
 
 ## Supported Platforms
 
-
+![Supports Android, Linux, macOS, Windows 10. iOS supported in theory but lacking in Appple Developer license.](https://raw.githubusercontent.com/RyanTooOp/CallForCodeCovid19/master/Images/SupportedPlatforms.jpeg)
 
 
   
