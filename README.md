@@ -57,3 +57,6 @@ Our Demo can be found [here](https://youtu.be/507I2lZGL7Q). Our install packages
 
 Due to an issue regarding branches, our source code was migrated from another repository (owned by @livelycarpet87). The initial commits and the initial history of our source code can be found [there](https://github.com/LivelyCarpet87/CallForCode_COVID-19_Project). 
   
+## Important Notice
+
+**Because of limitations of our Cloud Foundry Free Tier Services, the server frequently runs low on memory and may result in 500 errors**
