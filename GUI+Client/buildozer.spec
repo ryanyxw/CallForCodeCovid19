@@ -1,10 +1,10 @@
 [app]
 
 # (str) Title of your application
-title = COVID-19 Contact Tracer
+title = COVID-19ContactTracer
 
 # (str) Package name
-package.name = CovidContactTracer
+package.name = COVID19ContactTracer
 
 # (str) Package domain (needed for android/ios packaging)
 package.domain = io.ngrok.covidcontacttracer
