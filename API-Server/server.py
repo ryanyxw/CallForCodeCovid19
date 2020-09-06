@@ -81,12 +81,15 @@ License:
 isMacAddr = re.compile(r"([\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2}:[\da-fA-F]{2})")
 isFloodAddr = re.compile("FF:FF:FF:FF:FF:FF",re.I)
 OPERATORS = re.compile('SELECT|UPDATE|INSERT|DELETE|\*|OR|=', re.IGNORECASE)
+
 # Initiate lists of banned entities
 ip_ban_list = ExpiringDict(max_len=50*50000, max_age_seconds=15*60)
 mac_ban_list = ExpiringDict(max_len=25*50000, max_age_seconds=15*60)
 key_ban_list = ExpiringDict(max_len=25*1230, max_age_seconds=15*60)
+
 # Set maintenance mode to false
 maintenance = False
+
 # Initiation of custom cloudant manipulation library, IAM signin and database integrity checks
 ccm.init()
 app = flask.Flask(__name__)
@@ -100,19 +103,24 @@ def page_not_found(e):
 	strike(ip,None,None,2)
 	return 404
 
+
 # Test if user is banned (had 3 strikes) or is committing a bannable offense (SQL injection, admin inpersonation)
 # This is designed to slow down and discourage attackers without affecting users.
 @app.before_request
 def before_request():
 	global maintenance
+
 	# Test if server in maintenance mode and if it is an admin trying to toggle maintenance mode
 	if maintenance and request.path != '/maintenance':
 		abort(503)  # return 503 unavailable if it is in maintainance mode and NOT an admin exiting maintenance mode
+
 	# Get identifying information to test against ban list
 	ip = request.environ.get('REMOTE_ADDR')
 	if ip == '127.0.0.1' or ip == '0.0.0.0' or ip == '0.0.0.0.0.0':
 		ip = request.environ.get('HTTP_X_REAL_IP')
+
 	data = request.get_json(force=True)
+
 	if 'Self' in data:
 		macList = parseMacAddr(data['Self'])
 		if macList == []:
@@ -121,24 +129,29 @@ def before_request():
 			mac = macList[0]
 	else:
 		mac = None
+
 	secretKey = data.get('Secret')
 	# Proccess if User is on any ban list
 	if ip_ban_list.get(ip) is not None:
 		if ip_ban_list.get(ip) >= 3:
 			strike(ip,mac,secretKey,1) # +1 strike to renew ban
 			abort(403)
+
 	elif mac_ban_list.get(mac) is not None:
 		if mac_ban_list.get(mac) >= 3:
 			strike(ip,mac,secretKey,1) # +1 strike to renew ban
 			abort(403)
+
 	elif key_ban_list.get(secretKey) is not None:
 		if key_ban_list.get(secretKey) >= 3:
 			strike(ip,mac,secretKey,1) # +1 strike to renew ban
 			abort(403)
+
 	# Test if user is attempting to input malicious data
 	elif re.search(OPERATORS,repr(mac)+repr(secretKey)) is not None:
 		strike(ip,mac,secretKey,3) # 3 strikes for major offense, HIGHLY UNLIKELY to be of user error or application error
 		abort(403)
+
 	# test if user is using an invalid (unofficial) User Agent
 	elif 'COVIDContactTracerApp' not in request.user_agent.string and creds.adminAgent not in request.user_agent.string:
 		strike(ip,mac,secretKey,3) # 3 strikes for major offense, HIGHLY UNLIKELY to be of user error or application error
@@ -380,12 +393,6 @@ def markNegative(negative,secret):
 	ccm.changeState(negative,1)  # Mark person as recovered
 
 
-def deleteUser(user, secret):
-	if not verifySecret(user,secret):  # Do nothing if secret key does not match
-		return None
-	ccm.removePerson(user)
-
-
 def queryAddr(addrList):
 	for addr in addrList:
 		if ccm.getState(addr) == 3 or  ccm.getState(addr) == 2:
@@ -403,6 +410,12 @@ def parseMacAddr(AddrStr):
 		if re.match(isFloodAddr,addr) is None:
 			addrFound.append(addr.upper())
 	return addrList
+
+
+def deleteUser(user, secret):
+	if not verifySecret(user,secret):  # Do nothing if secret key does not match
+		return None
+	ccm.removePerson(user)
 
 
 def passRateLimit(macAddr):
@@ -437,6 +450,23 @@ def databaseReset():
 		return "Permission Denied", 403
 
 
+@app.route('/getCache',methods=["POST"])
+def getCache():
+	if creds.adminAgent not in request.user_agent.string:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
+		return "Permission Denied",403
+	data = request.get_json(force=True)
+	if 'key' not in data:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
+		return "Permission Denied",403
+	if data['key'] == creds.adminPass:
+		caches = "IP: " + repr(ip_ban_list) + ", MAC: " + repr(mac_ban_list) + ", Secrets: " + repr(key_ban_list)
+		return caches, 200
+	else:
+		strike(request.environ.get('REMOTE_ADDR'),None,None,3)
+		return "Permission Denied", 403
+
+
 @app.route('/clearCache',methods=["POST"])
 def clearCache():
 	if creds.adminAgent not in request.user_agent.string:
@@ -451,23 +481,6 @@ def clearCache():
 		mac_ban_list = []
 		key_ban_list = []
 		return "Action Completed", 202
-	else:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,3)
-		return "Permission Denied", 403
-
-
-@app.route('/getCache',methods=["POST"])
-def getCache():
-	if creds.adminAgent not in request.user_agent.string:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
-		return "Permission Denied",403
-	data = request.get_json(force=True)
-	if 'key' not in data:
-		strike(request.environ.get('REMOTE_ADDR'),None,None,1)  # 1 strike for suspicious behavior, ip banned if 3 strikes in 15 minutes
-		return "Permission Denied",403
-	if data['key'] == creds.adminPass:
-		caches = "IP: " + repr(ip_ban_list) + ", MAC: " + repr(mac_ban_list) + ", Secrets: " + repr(key_ban_list)
-		return caches, 200
 	else:
 		strike(request.environ.get('REMOTE_ADDR'),None,None,3)
 		return "Permission Denied", 403
